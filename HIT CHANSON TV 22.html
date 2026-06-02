@@ -1,0 +1,758 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; media-src * blob: data:; connect-src * blob: data:; worker-src * blob:;">
+<title>HIT CHANSON TV</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="HIT CHANSON">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#000000">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Oswald:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="apple-touch-icon" href="https://storage.e.jimdo.com/cdn-cgi/image/quality=85,fit=scale-down,format=auto,trim=0;0;0;0,width=800,height=800/image/545093144/951e7817-2005-4835-ace4-ca3170cdb9be.jpg">
+<link rel="icon" type="image/jpg" href="https://storage.e.jimdo.com/cdn-cgi/image/quality=85,fit=scale-down,format=auto,trim=0;0;0;0,width=800,height=800/image/545093144/951e7817-2005-4835-ace4-ca3170cdb9be.jpg">
+<style>
+* { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: #000; overflow: hidden; font-family: 'Oswald', Arial, sans-serif; }
+
+/* ── PLAYER ── */
+#player {
+  position: absolute; left: 0; top: 0; width: 100%; height: 100%;
+  background: #000; object-fit: cover;
+}
+
+/* ── CONTROLS ── */
+#controls {
+  position: absolute; left: 20px;
+  top: max(20px, env(safe-area-inset-top));
+  display: flex; gap: 10px; z-index: 20;
+  transition: opacity 0.4s ease;
+}
+body.controls-hidden #controls { opacity: 0; pointer-events: none; }
+
+button {
+  background: rgba(255,255,255,0.12); color: white;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 6px; padding: 8px 12px; font-size: 15px;
+  cursor: pointer; -webkit-appearance: none; touch-action: manipulation;
+  font-family: 'Oswald', Arial, sans-serif;
+}
+
+/* ── SEARCH ── */
+#searchWrapper { position: relative; }
+#searchInput {
+  background: rgba(0,0,0,0.6); color: white;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 6px; padding: 6px 12px; font-size: 15px;
+  width: 220px; outline: none; -webkit-appearance: none;
+  font-family: 'Oswald', Arial, sans-serif;
+}
+#searchInput::placeholder { color: rgba(255,255,255,0.45); }
+#searchResults {
+  position: absolute; top: 110%; left: 0; width: 100%; max-height: 50vh;
+  overflow-y: auto; background: rgba(0,0,0,0.95);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 6px; z-index: 100; display: none;
+  -webkit-overflow-scrolling: touch;
+}
+#searchResults div {
+  padding: 12px 14px; font-size: 14px; color: #fff; cursor: pointer;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  touch-action: manipulation;
+  font-family: 'Oswald', Arial, sans-serif;
+}
+#searchResults div:active { background: rgba(255,45,45,0.35); }
+#searchResults div span { color: rgba(255,255,255,0.5); font-size: 12px; }
+
+/* HORLOGE */
+#parisTime {
+  position: absolute;
+  left: 1.7%;
+  top: 7.5%;
+  width: 17%;
+  height: 9%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-size: clamp(46px, 2.5vw, 70px);  
+  letter-spacing: 3px;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.85);
+  z-index: 20;
+  opacity: 0.92;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+
+/* LOGO */
+#logo {
+  position: absolute;
+  left: 5.2%;
+  top: 72%;
+  width: calc(13% + 10px);
+  height: calc(15% + 10px);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  opacity: 0.95;
+  z-index: 20;
+  pointer-events: none;
+}
+
+/* ══════════════════════════════════════
+   LOWER THIRD DESIGN
+══════════════════════════════════════ */
+#lowerThird {
+  position: absolute;
+  top: 76%;
+  left: calc(10% + 8.5% + 20px);
+  width: calc(100vw - (10% + 8.5% + 40px));
+  max-width: calc(100vw - (10% + 8.5% + 40px));
+  height: 74px;
+  z-index: 30;
+  pointer-events: none;
+  display: none;
+}
+
+/* Structure des lignes horizontales */
+.line {
+  position: absolute;
+  height: 1px;
+  transform-origin: left;
+  transform: scaleX(0);
+  z-index: 1;
+}
+
+/* Configuration des 6 lignes */
+.l-1 { top: 0px;  left: 0px;   width: 100%; background-color: #ffffff; }
+.l-1.lt-enter { animation: lineDraw 0.6s ease forwards 0.1s, scanMove 1.8s ease-in-out 0.7s infinite alternate; }
+
+.l-2 { top: 15px; left: 0px;   width: 90%;  background-color: #ffffff; }
+.l-2.lt-enter { animation: lineDraw 0.6s ease forwards 0.2s, scanMoveInverse 1.5s ease-in-out 0.8s infinite alternate; }
+
+.l-3 { top: 30px; left: 0px;   width: 80%;  height: 1.5px; background-color: #c0191a; }
+.l-3.lt-enter { animation: lineDraw 0.6s ease forwards 0.3s, scanMove 1.2s ease-in-out 0.9s infinite alternate; }
+
+.l-4 { top: 44px; left: -35px; width: calc(70% + 35px); background-color: #ffffff; }
+.l-4.lt-enter { animation: lineDraw 0.6s ease forwards 0.4s, scanMoveInverse 2s ease-in-out 1s infinite alternate; }
+
+.l-5 { top: 59px; left: -35px; width: calc(60% + 35px); background-color: #ffffff; }
+.l-5.lt-enter { animation: lineDraw 0.6s ease forwards 0.5s, scanMove 1.6s ease-in-out 1.1s infinite alternate; }
+
+.l-6 { top: 73px; left: 0px;   width: 50%;  background-color: #ffffff; }
+.l-6.lt-enter { animation: lineDraw 0.6s ease forwards 0.6s, scanMoveInverse 2.2s ease-in-out 1.2s infinite alternate; }
+
+/* --- BLOC SUPÉRIEUR (ARTISTE ROUGE) --- */
+.center-band {
+  position: absolute;
+  top: 0px; left: 0px;
+  width: auto; height: 44px;
+  display: flex;
+  align-items: center;
+  z-index: 2;
+}
+
+.red-block {
+  background-color: #c0191a;
+  height: 100%;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  transform: scaleX(0);
+  transform-origin: left;
+}
+.red-block.lt-enter {
+  animation: lineDraw 0.5s cubic-bezier(0.1, 0.8, 0.2, 1) 0.4s forwards;
+}
+.red-block.lt-exit {
+  animation: lineClose 0.4s cubic-bezier(0.77, 0, 0.175, 1) forwards;
+}
+
+.artist-text {
+  color: #ffffff;
+  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-size: 24px;
+  font-weight: 400; 
+  letter-spacing: 2.5px;
+  white-space: nowrap;
+}
+
+/* --- BLOC INFÉRIEUR BLANC CHRONOMÉTRÉ --- */
+.sub-text-area {
+  position: absolute;
+  top: 44px; left: 0px;
+  height: 30px;
+  background-color: #ffffff;
+  overflow: hidden;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  z-index: 2;
+  width: 0px; 
+  opacity: 0;
+  transition: width 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s ease;
+}
+.sub-text-area.lt-enter {
+  animation: fadeInBlock 0.3s ease 0.6s forwards;
+}
+/* Fermeture : se retire vers la gauche */
+.sub-text-area.lt-exit {
+  animation: lineClose 0.4s cubic-bezier(0.77, 0, 0.175, 1) forwards !important;
+  transition: opacity 0.2s ease !important;
+}
+
+.rolling-wrapper {
+  position: absolute;
+  top: 0; left: 0;
+  width: auto;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.5s cubic-bezier(0.77, 0, 0.175, 1);
+  transform: translateY(0px);
+}
+
+.text-item {
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 15px;
+  color: #000000;
+  font-family: 'Bebas Neue', Impact, sans-serif;
+  font-size: 17px;
+  letter-spacing: 1.5px;
+  white-space: nowrap;
+  width: max-content;
+}
+
+/* Animations Keyframes */
+@keyframes lineDraw  { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes lineClose { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+@keyframes fadeInBlock { to { opacity: 1; } }
+
+@keyframes scanMove        { 0% { transform: scaleX(1) translateX(0);     } 100% { transform: scaleX(1) translateX(15px);  } }
+@keyframes scanMoveInverse { 0% { transform: scaleX(1) translateX(12px);  } 100% { transform: scaleX(1) translateX(-8px);  } }
+
+/* ── SPLASH ── */
+#splash {
+  position: fixed; inset: 0; background: #000; z-index: 9999;
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 30px;
+}
+#splash img { width: 180px; opacity: 0.95; border-radius: 24px; }
+#splashBtn {
+  background: #ff2d2d; color: #fff; border: none; border-radius: 14px;
+  padding: 18px 52px; font-size: 22px; font-weight: 800; cursor: pointer;
+  letter-spacing: 2px; box-shadow: 0 6px 24px rgba(255,45,45,0.4);
+  font-family: 'Bebas Neue', Impact, sans-serif;
+}
+</style>
+</head>
+<body>
+
+<div id="splash">
+  <img src="https://storage.e.jimdo.com/cdn-cgi/image/quality=85,fit=scale-down,format=auto,trim=0;0;0;0,width=477,height=480/image/531025464/077bc616-c1cb-480e-a1bf-1ef35b06cd8e.png" alt="Logo" />
+  <button id="splashBtn">&#9654; REGARDER</button>
+</div>
+
+<video id="player" playsinline controls></video>
+
+<div id="controls">
+  <button id="fullscreenBtn">&#9638; Plein &#233;cran</button>
+  <div id="searchWrapper">
+    <input type="text" id="searchInput" placeholder="&#128269; Rechercher un titre..." autocomplete="off" />
+    <div id="searchResults"></div>
+  </div>
+</div>
+
+<div id="parisTime"></div>
+<div id="logo"></div>
+
+<div id="lowerThird" aria-live="polite" role="status">
+  <div class="line l-1"></div>
+  <div class="line l-2"></div>
+  <div class="line l-3"></div>
+  <div class="line l-4"></div>
+  <div class="line l-5"></div>
+  <div class="line l-6"></div>
+
+  <div class="center-band">
+      <div class="red-block" id="ltRedBlock">
+          <div class="artist-text" id="ltArtistText">ARTISTE</div>
+      </div>
+  </div>
+
+  <div class="sub-text-area" id="whiteBlock">
+      <div class="rolling-wrapper" id="textRoller">
+          <div class="text-item" id="ltItem0">TITRE</div>
+          <div class="text-item" id="ltItem1">COMPOSITEURS</div>
+          <div class="text-item" id="ltItem2">LABEL · ANNÉE</div>
+          <div class="text-item" id="ltItem3">TITRE</div>
+      </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.13/dist/hls.min.js"></script>
+<script>
+const SHOW_AFTER    = 15;
+const BEFORE_END    = 35;
+const SHOW_DURATION = 13;
+
+const LOGO_URL = "https://storage.e.jimdo.com/cdn-cgi/image/quality=85,fit=scale-down,format=auto,trim=0;0;0;0,width=477,height=480/image/531025464/077bc616-c1cb-480e-a1bf-1ef35b06cd8e.png";
+document.getElementById('logo').style.backgroundImage = `url(${LOGO_URL})`;
+
+/* ══════════════════════════════════════
+   PLAYLIST
+══════════════════════════════════════ */
+const playlistSource = [
+  {"url":"https://files.catbox.moe/rd2pzt.mp4","titre":"Piu Bella Cosa","artiste":"Eros Ramazzotti","label":"DDD / BMG","compositeurs":"E.Ramazzotti, C.Guidetti, M.Fabrizio, A.Cogliati","annee":1996},
+  {"url":"https://files.catbox.moe/y5nx2l.mp4","titre":"Sacrifice","artiste":"Elton John","label":"Phonogram Records","compositeurs":"Elton John, Bernie Taupin","annee":1989},
+  {"url":"https://files.catbox.moe/x1inpg.mp4","titre":"Somebody's Watching Me","artiste":"Rockwell","label":"Motown Records","compositeurs":"Rockwell","annee":1984},
+  {"url":"https://files.catbox.moe/cp5gmd.mp4","titre":"Speed","artiste":"Zazie","label":"6&7","compositeurs":"Zazie, Édith Fambuena","annee":2018},
+  {"url":"https://files.catbox.moe/yh88m4.mp4","titre":"Cherish","artiste":"Kool & The Gang","label":"De-Lite Records","compositeurs":"James Taylor, Ronald Bell, Kool & The Gang","annee":1985},
+  {"url":"https://files.catbox.moe/35s9cd.mp4","titre":"Never Gonna Give You Up","artiste":"Rick Astley","label":"RCA Records","compositeurs":"Mike Stock, Matt Aitken, Pete Waterman","annee":1987},
+  {"url":"https://files.catbox.moe/6h4epk.mp4","titre":"Bohemian Rhapsody","artiste":"Queen","label":"EMI Records","compositeurs":"Freddie Mercury","annee":1975},
+  {"url":"https://files.catbox.moe/5ctfl1.mp4","titre":"The Way You Make Me Feel","artiste":"Michael Jackson","label":"Jivepic Sony Music","compositeurs":"Michael Jackson","annee":1987},
+  {"url":"https://files.catbox.moe/07b8ki.mp4","titre":"My Heart Will Go On","artiste":"Celine Dion","label":"Columbia Records / Epic Records","compositeurs":"James Horner, Will Jennings","annee":1997},
+  {"url":"https://files.catbox.moe/jca1kh.mp4","titre":"Zoo","artiste":"Shakira","label":"Walt Disney Records","compositeurs":"Shakira, Ed Sheeran, Blake Slatkin","annee":2025},
+  {"url":"https://files.catbox.moe/slyht4.mp4","titre":"Just An Illusion","artiste":"Imagination","label":"R&B Records","compositeurs":"L.John, A.Ingram, S.Jolley, T.Swain","annee":1982},
+  {"url":"https://files.catbox.moe/ud839n.mp4","titre":"Je Sais Pas","artiste":"Celine Dion","label":"Columbia Records","compositeurs":"Jean-Jacques Goldman, Robert Goldman","annee":1995},
+  {"url":"https://files.catbox.moe/fm9qi3.mp4","titre":"Heal The World","artiste":"Michael Jackson","label":"Jivepic Sony BMG","compositeurs":"Michael Jackson","annee":1992},
+  {"url":"https://files.catbox.moe/4rm9vj.mp4","titre":"Girls Just Want To Have Fun","artiste":"Cyndi Lauper","label":"Portrait Records","compositeurs":"Robert Hazard","annee":1983},
+  {"url":"https://files.catbox.moe/ntb7c2.mp4","titre":"Desenchantee","artiste":"Mylene Farmer","label":"Polydor","compositeurs":"Mylene Farmer, Laurent Boutonnat","annee":1991},
+  {"url":"https://files.catbox.moe/uxcuf9.mp4","titre":"La Fievre","artiste":"Julien Dore","label":"Columbia Records","compositeurs":"Julien Dore, Tristan Salvati","annee":2020},
+  {"url":"https://files.catbox.moe/gjs89q.mp4","titre":"Into The Groove","artiste":"Madonna","label":"Sire Records / Warner Bros.","compositeurs":"Madonna, Stephen Bray","annee":1985},
+  {"url":"https://files.catbox.moe/h322ob.mp4","titre":"La Corrida","artiste":"Francis Cabrel","label":"Columbia Records","compositeurs":"Francis Cabrel","annee":1994},
+  {"url":"https://files.catbox.moe/iavjvw.mp4","titre":"I Was Made For Lovin' You","artiste":"Kiss","label":"Casablanca Records","compositeurs":"Paul Stanley, Desmond Child, Vini Poncia","annee":1979},
+  {"url":"https://files.catbox.moe/k4ieuw.mp4","titre":"Video Killed The Radio Star","artiste":"The Buggles","label":"Island Records","compositeurs":"Trevor Horn, Geoff Downes, Bruce Woolley","annee":1979},
+  {"url":"https://files.catbox.moe/tn2kng.mp4","titre":"Quelque Chose De Tennessee","artiste":"Johnny Hallyday","label":"Philips","compositeurs":"Michel Berger","annee":1985},
+  {"url":"https://files.catbox.moe/jykzv9.mp4","titre":"You're My Heart, You're My Soul","artiste":"Modern Talking","label":"Hansa Records","compositeurs":"Dieter Bohlen","annee":1984},
+  {"url":"https://files.catbox.moe/9ip74a.mp4","titre":"Les Demons De Minuit","artiste":"Images","label":"Flarenasch / Warner Music France","compositeurs":"Jean-Louis Pujade, Christophe Desprès, Richard Seff","annee":1986},
+  {"url":"https://files.catbox.moe/hhj4z0.mp4","titre":"Le Lac","artiste":"Julien Doré","label":"Columbia Records","compositeurs":"Julien Doré, Darko","annee":2016},
+  {"url":"https://files.catbox.moe/b0e1x2.mp4","titre":"Womanizer","artiste":"Britney Spears","label":"Jive Records","compositeurs":"Nikesha Briscoe, Rafael Akinyemi","annee":2008},
+  {"url":"https://files.catbox.moe/to0i1a.mp4","titre":"Radio Ga Ga","artiste":"Queen","label":"EMI Records","compositeurs":"Roger Taylor","annee":1984},
+  {"url":"https://files.catbox.moe/32a1ze.mp4","titre":"Les Mots","artiste":"Mylene Farmer Feat. Seal","label":"Polydor","compositeurs":"Mylène Farmer, Laurent Boutonnat","annee":2001},
+  {"url":"https://files.catbox.moe/udkpmv.mp4","titre":"Coco Caline","artiste":"Julien Dore","label":"Columbia Records","compositeurs":"Julien Doré, David Faisques","annee":2017},
+  {"url":"https://files.catbox.moe/uppv5h.mp4","titre":"They Don't Care About Us","artiste":"Michael Jackson","label":"Jivepic Sony BMG","compositeurs":"Michael Jackson","annee":1996},
+  {"url":"https://files.catbox.moe/xedb5d.mp4","titre":"Material Girl","artiste":"Madonna","label":"Sire Records","compositeurs":"Peter Brown, Robert Rans","annee":1985},
+  {"url":"https://files.catbox.moe/01zirt.mp4","titre":"Je Joue De La Musique","artiste":"Calogero","label":"Polydor","compositeurs":"Calogero, Marie Bastide","annee":2017},
+  {"url":"https://files.catbox.moe/upcgc1.mp4","titre":"Night Fever","artiste":"Bee Gees","label":"RSO Records","compositeurs":"Barry Gibb, Robin Gibb, Maurice Gibb","annee":1977},
+  {"url":"https://files.catbox.moe/oawutj.mp4","titre":"Nous","artiste":"Julien Dore","label":"Columbia Records","compositeurs":"Julien Doré, Tristan Salvati","annee":2020},
+  {"url":"https://files.catbox.moe/2xlhep.mp4","titre":"(I've Had) The Time Of My Life","artiste":"Bill Medley Feat. Jennifer Warnes","label":"RCA Records","compositeurs":"Franke Previte, Donald Markowitz, John DeNicola","annee":1987},
+  {"url":"https://files.catbox.moe/su015s.mp4","titre":"L'Envie","artiste":"Johnny Hallyday","label":"Philips","compositeurs":"Jean-Jacques Goldman","annee":1986},
+  {"url":"https://files.catbox.moe/xyi6er.mp4","titre":"Capitaine Abandonne","artiste":"Gold","label":"WEA","compositeurs":"Jacques Cardona, Bernard Mazauric, Émile Wandelmer","annee":1985},
+  {"url":"https://files.catbox.moe/fjsbs1.mp4","titre":"Part-Time Lover","artiste":"Stevie Wonder","label":"Tamla Records","compositeurs":"Stevie Wonder","annee":1985},
+  {"url":"https://files.catbox.moe/c8vg1z.mp4","titre":"Boogie Wonderland","artiste":"Earth Wind & Fire Feat. The Emotions","label":"CBS Records","compositeurs":"Allee Willis, Jon Lind","annee":1979},
+  {"url":"https://files.catbox.moe/c7fpbb.mp4","titre":"C'est Une Belle Journee","artiste":"Mylene Farmer","label":"Polydor","compositeurs":"Mylène Farmer, Laurent Boutonnat","annee":2002},
+  {"url":"https://files.catbox.moe/76we06.mp4","titre":"En Rouge Et Noir","artiste":"Jeanne Mas","label":"EMI Columbia","compositeurs":"J.Mas, L. Meinardi, M. Calabrese, P. Calabrese, R. Musumarra","annee":1986},
+  {"url":"https://files.catbox.moe/coeksx.mp4","titre":"It's Raining Men","artiste":"The Weather Girls","label":"Columbia Records","compositeurs":"Paul Jabara, Paul Shaffer","annee":1982},
+  {"url":"https://files.catbox.moe/8a5jjq.mp4","titre":"Will You Be There","artiste":"Michael Jackson","label":"Jivepic Sony Music","compositeurs":"Michael Jackson","annee":1993},
+  {"url":"https://files.catbox.moe/i1xa6r.mp4","titre":"Maitresse","artiste":"Images","label":"Flarenasch","compositeurs":"Jean-Louis Pujade, Frédéric Locci","annee":1987},
+  {"url":"https://files.catbox.moe/d1769r.mp4","titre":"Like A Prayer","artiste":"Madonna","label":"Sire Records","compositeurs":"Madonna, Patrick Leonard","annee":1989},
+  {"url":"https://files.catbox.moe/tbr1h1.mp4","titre":"L'Ame-Stram-Gram","artiste":"Mylene Farmer","label":"Polydor","compositeurs":"Mylène Farmer, Laurent Boutonnat","annee":1999},
+  {"url":"https://files.catbox.moe/uywphy.mp4","titre":"Locked Out Of Heaven","artiste":"Bruno Mars","label":"Atlantic Records","compositeurs":"B.Mars, P.Lawrence, A.Levine, M.Ronson, J.Bhasker, E.Haynie","annee":2012},
+  {"url":"https://files.catbox.moe/75hy5t.mp4","titre":"Money For Nothing","artiste":"Dire Straits","label":"Warner Bros. Records","compositeurs":"Mark Knopfler, Sting","annee":1985},
+  {"url":"https://files.catbox.moe/q1ct78.mp4","titre":"Everybody Wants To Rule The World","artiste":"Tears For Fears","label":"Mercury Records","compositeurs":"Roland Orzabal, Ian Stanley, Chris Hughes","annee":1985},
+  {"url":"https://files.catbox.moe/1o78dk.mp4","titre":"Nuit De Folie","artiste":"Debut de Soiree","label":"CBS Disques","compositeurs":"William Picard, Claude Mainguy, Sauveur Pichot","annee":1988},
+  {"url":"https://files.catbox.moe/ztvfbt.mp4","titre":"I'll Be There For You","artiste":"The Rembrandts","label":"EastWest Records","compositeurs":"D.Crane, M.Kauffman, M.Skloff, A.Willis, P.Sōlem, D.Wilde","annee":1995},
+  {"url":"https://files.catbox.moe/q0egwk.mp4","titre":"Personal Jesus","artiste":"Depeche Mode","label":"Mute Records","compositeurs":"Martin Gore","annee":1989},
+  {"url":"https://files.catbox.moe/xtuy12.mp4","titre":"Maldon","artiste":"Zouk Machine","label":"Ariola France","compositeurs":"Guy Houllier, Yves Honoré","annee":1990},
+  {"url":"https://files.catbox.moe/mpnwfx.mp4","titre":"Encore Un Matin","artiste":"Jean-Jacques Goldman","label":"CBS Disques","compositeurs":"Jean-Jacques Goldman","annee":1984},
+  {"url":"https://files.catbox.moe/i2z2wd.mp4","titre":"Plus Pres Des Etoiles","artiste":"Gold","label":"WEA","compositeurs":"Jean Garcia","annee":1985},
+  {"url":"https://files.catbox.moe/r54y7e.mp4","titre":"La Fille Aux Bas Nylons","artiste":"Julien Clerc","label":"Virgin","compositeurs":"Julien Clerc, Luc Plamondon","annee":1984},
+  {"url":"https://files.catbox.moe/8akgcq.mp4","titre":"Ainsi Soit Je...","artiste":"Mylene Farmer","label":"Polydor","compositeurs":"Mylène Farmer, Laurent Boutonnat","annee":1988},
+  {"url":"https://files.catbox.moe/m6t5sx.mp4","titre":"Easy Lover","artiste":"Philip Bailey Feat. Phil Collins","label":"CBS Records","compositeurs":"Philip Bailey, Phil Collins, Nathan East","annee":1984},
+  {"url":"https://files.catbox.moe/xrqpcf.mp4","titre":"Les Limites","artiste":"Julien Dore","label":"Columbia Records","compositeurs":"David Scrima","annee":2008},
+  {"url":"https://files.catbox.moe/48rg2y.mp4","titre":"Freedom! '90","artiste":"George Michael","label":"CBS Records","compositeurs":"George Michael","annee":1990},
+  {"url":"https://files.catbox.moe/22h3b7.mp4","titre":"Money's Too Tight To Mention","artiste":"Simply Red","label":"Elektra Records","compositeurs":"John Valentine, William Valentine","annee":1985},
+  {"url":"https://files.catbox.moe/ylml97.mp4","titre":"I'm Every Woman","artiste":"Whitney Houston","label":"Arista Records","compositeurs":"Nickolas Ashford, Valerie Simpson","annee":1993},
+  {"url":"https://files.catbox.moe/ehcmun.mp4","titre":"Eyes Without A Face","artiste":"Billy Idol","label":"Chrysalis Records","compositeurs":"Billy Idol, Steve Stevens","annee":1984},
+  {"url":"https://files.catbox.moe/u1io5h.mp4","titre":"Everything She Wants","artiste":"Wham!","label":"Columbia Records","compositeurs":"George Michael","annee":1984},
+  {"url":"https://files.catbox.moe/1m2wqq.mp4","titre":"The Best","artiste":"Tina Turner","label":"Capitol Records","compositeurs":"Mike Chapman, Holly Knight","annee":1989},
+  {"url":"https://files.catbox.moe/3dlgv2.mp4","titre":"Joue Pas","artiste":"François Feldman Feat. Joniece Jamison","label":"Phonogram","compositeurs":"François Feldman, Thierry Durbet","annee":1989},
+  {"url":"https://files.catbox.moe/7cm0w8.mp4","titre":"Just Can't Get Enough","artiste":"Depeche Mode","label":"Mute Records","compositeurs":"Vince Clarke","annee":1981},
+  {"url":"https://files.catbox.moe/2nk85b.mp4","titre":"You're The One That I Want","artiste":"John Travolta & Olivia Newton-John","label":"RSO Records","compositeurs":"John Farrar","annee":1978},
+  {"url":"https://files.catbox.moe/j6yjry.mp4","titre":"Gimme! Gimme! Gimme! (A Man After Midnight)","artiste":"ABBA","label":"Polar Music","compositeurs":"Benny Andersson, Björn Ulvaeus","annee":1979},
+  {"url":"https://files.catbox.moe/0t6ken.mp4","titre":"Toute Premiere Fois","artiste":"Jeanne Mas","label":"EMI Pathé Marconi","compositeurs":"Jeanne Mas, Zanelli, Romano Musumarra","annee":1984},
+  {"url":"https://files.catbox.moe/gck2rx.mp4","titre":"Hold The Line","artiste":"Toto","label":"Columbia Records","compositeurs":"David Paich","annee":1978},
+  {"url":"https://files.catbox.moe/3qym0g.mp4","titre":"Something Got Me Started","artiste":"Simply Red","label":"Warner Music UK","compositeurs":"Mick Hucknall, Fritz McIntyre","annee":1991},
+  {"url":"https://files.catbox.moe/p1f855.mp4","titre":"Eye Of The Tiger","artiste":"Survivor","label":"Scotti Bros. Records","compositeurs":"Frankie Sullivan, Jim Peterik","annee":1982},
+  {"url":"https://files.catbox.moe/6jwn1v.mp4","titre":"Get Lucky","artiste":"Daft Punk Feat. Pharrell Williams & Nile Rodgers","label":"Columbia Records","compositeurs":"T.Bangalter, G.de Homem-Christo, P.Williams, N.Rodgers","annee":2013},
+  {"url":"https://files.catbox.moe/ilxve6.mp4","titre":"Bad","artiste":"Michael Jackson","label":"Jivepic Sony BMG","compositeurs":"Michael Jackson","annee":1987},
+  {"url":"https://files.catbox.moe/aoltcf.mp4","titre":"Corps À Corps","artiste":"Images","label":"Flarenasch","compositeurs":"Jean-Louis Pujade, Mario Ramsamy, Frédéric Locci","annee":1986},
+  {"url":"https://files.catbox.moe/boqxgh.mp4","titre":"L'Instant X","artiste":"Mylène Farmer","label":"Polydor","compositeurs":"Mylène Farmer, Laurent Boutonnat","annee":1995},
+  {"url":"https://files.catbox.moe/hdlrxi.mp4","titre":"Machistador","artiste":"-M-","label":"Delabel","compositeurs":"Matthieu Chedid","annee":1998},
+  {"url":"https://files.catbox.moe/ygtsb0.mp4","titre":"Dirty Diana","artiste":"Michael Jackson","label":"Jivepic Sony Music","compositeurs":"Michael Jackson","annee":1988},
+  {"url":"https://files.catbox.moe/30s7ih.mp4","titre":"Le Dernier Jour Du Disco","artiste":"Juliette Armanet","label":"Romance Musique","compositeurs":"Juliette Armanet, Adrien Armanet","annee":2021},
+  {"url":"https://files.catbox.moe/84xr1a.mp4","titre":"Believe","artiste":"Cher","label":"Warner Bros. Records","compositeurs":"B.Higgins, S.McLennan, P.Barry, S.Torch, M.Gray, T.Powell","annee":1998},
+  {"url":"https://files.catbox.moe/ttspxi.mp4","titre":"When The Rain Begins To Fall","artiste":"Jermaine Jackson Feat. Pia Zadora","label":"Arista Records","compositeurs":"Peggy March, Michael Bradley, Steve Wittmack","annee":1984},
+  {"url":"https://files.catbox.moe/h4drue.mp4","titre":"YMCA","artiste":"Village People","label":"Casablanca Records","compositeurs":"Jacques Morali, Henri Belolo, Victor Willis","annee":1978},
+  {"url":"https://files.catbox.moe/awnymo.mp4","titre":"Chanter Pour Ceux Qui Sont Loin De Chez Eux","artiste":"Michel Berger","label":"Barclay","compositeurs":"Michel Berger","annee":1985},
+  {"url":"https://files.catbox.moe/hl1jmc.mp4","titre":"Sorry Seems To Be The Hardest Word","artiste":"Elton John","label":"The Rocket Record Company","compositeurs":"Elton John, Bernie Taupin","annee":1976},
+  {"url":"https://files.catbox.moe/6nbiqw.mp4","titre":"Words","artiste":"F.R. David","label":"Carrère Records","compositeurs":"F.R. David, Martin Kupersmith, Louis S. Yaguda","annee":1982},
+  {"url":"https://files.catbox.moe/hu56uf.mp4","titre":"Le Portrait","artiste":"Calogero","label":"Polydor","compositeurs":"Calogero, Gioacchino Maurici, Paul École","annee":2014},
+  {"url":"https://files.catbox.moe/ll1v0v.mp4","titre":"Another Day In Paradise","artiste":"Phil Collins","label":"Atlantic Records","compositeurs":"Phil Collins","annee":1989},
+  {"url":"https://files.catbox.moe/icuck6.mp4","titre":"Rosanna","artiste":"Toto","label":"Columbia Records","compositeurs":"David Paich","annee":1982},
+  {"url":"https://files.catbox.moe/6uyfkl.mp4","titre":"Voyage Voyage","artiste":"Desireless","label":"CBS Records","compositeurs":"Jean-Michel Rivat, Dominique Dubois","annee":1986},
+  {"url":"https://files.catbox.moe/nqb9vo.mp4","titre":"I Can See Clearly Now","artiste":"Jimmy Cliff","label":"Columbia Records","compositeurs":"Johnny Nash","annee":1993},
+  {"url":"https://files.catbox.moe/yqynzq.mp4","titre":"Quand La Musique Est Bonne","artiste":"Jean-Jacques Goldman","label":"CBS Disques","compositeurs":"Jean-Jacques Goldman","annee":1982},
+  {"url":"https://files.catbox.moe/dvq41k.mp4","titre":"Lady (Hear Me Tonight)","artiste":"Modjo","label":"MCA Records","compositeurs":"Yann Destagnol, Romain Tranchart","annee":2000},
+  {"url":"https://files.catbox.moe/h5v8au.mp4","titre":"Give Me The Night","artiste":"George Benson","label":"Qwest Records / Warner Bros.","compositeurs":"Rod Temperton","annee":1980},
+  {"url":"https://files.catbox.moe/4w79n1.mp4","titre":"Liberian Girl","artiste":"Michael Jackson","label":"Jivepic Sony Music","compositeurs":"Michael Jackson","annee":1989},
+  {"url":"https://files.catbox.moe/7u8c42.mp4","titre":"Sauver L'Amour","artiste":"Daniel Balavoine","label":"Barclay","compositeurs":"Daniel Balavoine","annee":1986},
+  {"url":"https://files.catbox.moe/3vzv6v.mp4","titre":"Don't Stop Me Now","artiste":"Queen","label":"EMI Records","compositeurs":"Freddie Mercury","annee":1979},
+  {"url":"https://files.catbox.moe/ym004x.mp4","titre":"In The Air Tonight","artiste":"Phil Collins","label":"Atlantic Records","compositeurs":"Phil Collins","annee":1981},
+  {"url":"https://files.catbox.moe/vyirkb.mp4","titre":"Who Is It","artiste":"Michael Jackson","label":"Jivepic Sony BMG","compositeurs":"Michael Jackson","annee":1992},
+  {"url":"https://files.catbox.moe/nfx8wa.mp4","titre":"California","artiste":"Mylene Farmer","label":"Polydor","compositeurs":"Mylène Farmer, Laurent Boutonnat","annee":1996},
+  {"url":"https://files.catbox.moe/n9blca.mp4","titre":"Regrets","artiste":"Mylene Farmer Feat. Jean-Louis Murat","label":"Polydor","compositeurs":"Mylène Farmer, Laurent Boutonnat","annee":1991},
+  {"url":"https://files.catbox.moe/em9tal.mp4","titre":"Respire Encore","artiste":"Clara Luciani","label":"Universal Music / Romance Musique","compositeurs":"Clara Luciani, Ambroise Willaume","annee":2021},
+  {"url":"https://files.catbox.moe/xs3fyy.mp4","titre":"Let's Groove","artiste":"Earth Wind & Fire","label":"CBS Records","compositeurs":"Maurice White, Wayne Vaughn","annee":1981},
+  {"url":"https://files.catbox.moe/l12kz9.mp4","titre":"Smalltown Boy","artiste":"Bronski Beat","label":"London Records","compositeurs":"Jimmy Somerville, Steve Bronski, Larry Steinbachek","annee":1984},
+  {"url":"https://files.catbox.moe/49u5cf.mp4","titre":"Wake Me Up Before You Go-Go","artiste":"Wham!","label":"Epic Records","compositeurs":"George Michael","annee":1984},
+  {"url":"https://files.catbox.moe/dvwd57.mp4","titre":"Fade To Grey","artiste":"Visage","label":"Polydor Records","compositeurs":"Billy Currie, Chris Payne, Midge Ure","annee":1980},
+  {"url":"https://files.catbox.moe/8vm7e4.mp4","titre":"Don't Stop Til You Get Enough","artiste":"Michael Jackson","label":"Jivepic Sony Music","compositeurs":"Michael Jackson, Greg Philiganes","annee":1979},
+  {"url":"https://files.catbox.moe/pn0pfg.mp4","titre":"Stars","artiste":"Simply Red","label":"Warner Music UK","compositeurs":"Mick Hucknall","annee":1991},
+  {"url":"https://files.catbox.moe/nhmi9c.mp4","titre":"Black Or White","artiste":"Michael Jackson","label":"Jivepic Sony BMG","compositeurs":"Michael Jackson","annee":1991},
+  {"url":"https://files.catbox.moe/3bg0yj.mp4","titre":"Voulez-Vous","artiste":"ABBA","label":"Polar Music","compositeurs":"Björn Ulvaeus, Benny Andersson","annee":1979},
+  {"url":"https://files.catbox.moe/aifrge.mp4","titre":"Fresh","artiste":"Kool & The Gang","label":"De-Lite Records","compositeurs":"James Taylor, Sandy Linzer, Kool & The Gang","annee":1984},
+  {"url":"https://files.catbox.moe/ylvgp9.mp4","titre":"Vogue","artiste":"Madonna","label":"Sire Records","compositeurs":"Madonna, Shep Pettibone","annee":1990},
+  {"url":"https://files.catbox.moe/lp5v3t.mp4","titre":"What Is Love","artiste":"Haddaway","label":"Coconut Records","compositeurs":"Dee Dee Halligan, Junior Torello","annee":1993},
+  {"url":"https://files.catbox.moe/upv63a.mp4","titre":"We Are The World","artiste":"USA for Africa","label":"Columbia Sony BMG","compositeurs":"Michael Jackson, Lionel Richie","annee":1985},
+  {"url":"https://files.catbox.moe/ueqa66.mp4","titre":"A Kind Of Magic","artiste":"Queen","label":"EMI Records","compositeurs":"Roger Taylor","annee":1986},
+  {"url":"https://files.catbox.moe/ewvggf.mp4","titre":"Africa","artiste":"Toto","label":"Columbia Records","compositeurs":"David Paich, Jeff Porcaro","annee":1982},
+  {"url":"https://files.catbox.moe/eychdf.mp4","titre":"The Show Must Go On","artiste":"Queen","label":"EMI Parlophone","compositeurs":"Brian May","annee":1991},
+  {"url":"https://files.catbox.moe/a0wty9.mp4","titre":"Bette Davis Eyes","artiste":"Kim Carnes","label":"EMI America Records","compositeurs":"Donna Weiss, Jackie DeShannon","annee":1981},
+  {"url":"https://files.catbox.moe/6xv9f2.mp4","titre":"Saving All My Love For You","artiste":"Whitney Houston","label":"Arista Records","compositeurs":"Michael Masser, Gerry Goffin","annee":1985},
+  {"url":"https://files.catbox.moe/xw6byk.mp4","titre":"Back To Black","artiste":"Amy Winehouse","label":"Universal Island Records","compositeurs":"Amy Winehouse, Mark Ronson","annee":2006},
+  {"url":"https://files.catbox.moe/hw1ns6.mp4","titre":"Don't Go Breaking My Heart","artiste":"Elton John Feat. Kiki Dee","label":"Rocket Records","compositeurs":"Elton John, Bernie Taupin","annee":1976},
+  {"url":"https://files.catbox.moe/rcqdjy.mp4","titre":"What's Love Got To Do With It","artiste":"Tina Turner","label":"Capitol Records","compositeurs":"Terry Britten, Graham Lyle","annee":1984},
+  {"url":"https://files.catbox.moe/l6zcgk.mp4","titre":"Ella Elle L'a","artiste":"France Gall","label":"Warner Music Group","compositeurs":"Michel Berger","annee":1987},
+  {"url":"https://files.catbox.moe/e119oy.mp4","titre":"Another Brick In The Wall","artiste":"Pink Floyd","label":"Harvest Records","compositeurs":"Roger Waters","annee":1979},
+  {"url":"https://files.catbox.moe/oi7tvz.mp4","titre":"Enola Gay","artiste":"Orchestral Manoeuvres In The Dark","label":"Dindisc Records","compositeurs":"Andy McCluskey","annee":1980},
+  {"url":"https://files.catbox.moe/12896s.mp4","titre":"You Are Not Alone","artiste":"Michael Jackson","label":"Jivepic Sony BMG","compositeurs":"R. Kelly","annee":1995},
+  {"url":"https://files.catbox.moe/dh4nai.mp4","titre":"La Grenade","artiste":"Clara Luciani","label":"Cinq7 / Because Music","compositeurs":"Clara Luciani, Ambroise Willaume","annee":2017},
+  {"url":"https://files.catbox.moe/bkihor.mp4","titre":"Sweet Dreams (Are Made Of This)","artiste":"Eurythmics","label":"RCA Records","compositeurs":"Annie Lennox, Dave Stewart","annee":1983},
+  {"url":"https://files.catbox.moe/j3fckp.mp4","titre":"Stayin' Alive","artiste":"Bee Gees","label":"RSO Records","compositeurs":"Barry Gibb, Robin Gibb, Maurice Gibb","annee":1977},
+  {"url":"https://files.catbox.moe/1irmty.mp4","titre":"I Want To Break Free","artiste":"Queen","label":"EMI Records","compositeurs":"John Deacon","annee":1984},
+  {"url":"https://files.catbox.moe/b92l94.mp4","titre":"Get Down On It","artiste":"Kool & The Gang","label":"De-Lite Records","compositeurs":"J.Taylor, R.Bell, R.Bell, G.Brown, R.Mickens, C.Smith, C.Smith, D.Thomas","annee":1981},
+  {"url":"https://files.catbox.moe/849r9b.mp4","titre":"Enjoy The Silence","artiste":"Depeche Mode","label":"Mute Records","compositeurs":"Martin Gore","annee":1990},
+  {"url":"https://files.catbox.moe/7h7kzd.mp4","titre":"We Don't Need Another Hero","artiste":"Tina Turner","label":"Capitol Records","compositeurs":"Terry Britten, Graham Lyle","annee":1985},
+  {"url":"https://files.catbox.moe/52pkxv.mp4","titre":"Je Te Promets","artiste":"Johnny Hallyday","label":"Philips","compositeurs":"Jean-Jacques Goldman","annee":1986},
+  {"url":"https://files.catbox.moe/0zsjz3.mp4","titre":"...Baby One More Time","artiste":"Britney Spears","label":"Jive Records","compositeurs":"Max Martin","annee":1998},
+  {"url":"https://files.catbox.moe/uh2reg.mp4","titre":"Daddy Cool","artiste":"Boney M.","label":"Hansa Records","compositeurs":"Frank Farian, George Reyam","annee":1976},
+  {"url":"https://files.catbox.moe/do2lo7.mp4","titre":"1987","artiste":"Calogero","label":"Polydor","compositeurs":"Calogero, Paul École","annee":2018},
+  {"url":"https://files.catbox.moe/utw3t0.mp4","titre":"I'm So Excited","artiste":"The Pointer Sisters","label":"Planet Records","compositeurs":"A.Pointer, J.Pointer, R.Pointer, T.Lawrence","annee":1982},
+  {"url":"https://files.catbox.moe/6yrtw9.mp4","titre":"I'm Still Standing","artiste":"Elton John","label":"Rocket Records","compositeurs":"Elton John, Bernie Taupin","annee":1983},
+  {"url":"https://files.catbox.moe/bnok5p.mp4","titre":"I Ain't Worried","artiste":"OneRepublic","label":"Interscope Records","compositeurs":"Ryan Tedder, Brent Kutzle, Tyler Spry","annee":2022},
+  {"url":"https://files.catbox.moe/l1t2pq.mp4","titre":"Les Planetes","artiste":"M. Pokora","label":"TF1 Musique","compositeurs":"Yohann Malory, Tristan Salvati","annee":2019},
+  {"url":"https://files.catbox.moe/awhwbs.mp4","titre":"Fondamental","artiste":"Calogero","label":"Polydor","compositeurs":"Calogero, Gioacchino Maurici, Paul École","annee":2017},
+  {"url":"https://files.catbox.moe/qrfq9w.mp4","titre":"Billie Jean","artiste":"Michael Jackson","label":"Jivepic Sony BMG","compositeurs":"Michael Jackson","annee":1982},
+  {"url":"https://files.catbox.moe/ip99rl.mp4","titre":"I Will Always Love You","artiste":"Whitney Houston","label":"Arista Records","compositeurs":"Dolly Parton","annee":1992},
+  {"url":"https://files.catbox.moe/s1us0z.mp4","titre":"Je Te Donne","artiste":"Jean-Jacques Goldman Feat. Michael Jones","label":"Epic Records","compositeurs":"Jean-Jacques Goldman, Michael Jones","annee":1985},
+  {"url":"https://files.catbox.moe/oqxjm3.mp4","titre":"Alexandrie Alexandra","artiste":"M. Pokora","label":"TF1 Musique","compositeurs":"Claude François, Jean-Pierre Bourtayre, Étienne Roda-Gil","annee":2016},
+  {"url":"https://files.catbox.moe/ovbi1b.mp4","titre":"Break My Heart","artiste":"Dua Lipa","label":"Warner Records","compositeurs":"D.Lipa, A.Tamposi, A.Watt, S.Johnson, J.Johnson, M.Hutchence, A.Farriss","annee":2020},
+  {"url":"https://files.catbox.moe/rw5psl.mp4","titre":"The Winner Takes It All","artiste":"ABBA","label":"Polar Music","compositeurs":"Björn Ulvaeus, Benny Andersson","annee":1980},
+  {"url":"https://files.catbox.moe/mof8zu.mp4","titre":"As It Was","artiste":"Harry Styles","label":"Erskine Records / Columbia Records","compositeurs":"Harry Styles, Kid Harpoon, Tyler Johnson","annee":2022},
+  {"url":"https://files.catbox.moe/hzzj9x.mp4","titre":"Smooth Criminal","artiste":"Michael Jackson","label":"Jivepic Sony Music","compositeurs":"Michael Jackson","annee":1989},
+  {"url":"https://files.catbox.moe/6y490h.mp4","titre":"Macumba","artiste":"Jean-Pierre Mader","label":"Flarenasch","compositeurs":"Jean-Pierre Mader, Richard Seff","annee":1985},
+  {"url":"https://files.catbox.moe/dbqu0m.mp4","titre":"Beat It","artiste":"Michael Jackson","label":"Sony Music Legacy Sony Music","compositeurs":"Michael Jackson","annee":1983},
+  {"url":"https://files.catbox.moe/xt574n.mp4","titre":"Earth Song","artiste":"Michael Jackson","label":"Jivepic Sony BMG","compositeurs":"Michael Jackson","annee":1995},
+  {"url":"https://files.catbox.moe/i0yo3a.mp4","titre":"Take On Me","artiste":"a-ha","label":"Warner Bros. Records","compositeurs":"Morten Harket, Magne Furuholmen, Pål Waaktaar-Savoy","annee":1985},
+  {"url":"https://files.catbox.moe/gdhyqq.mp4","titre":"La-Bas","artiste":"Jean-Jacques Goldman Feat. Sirima","label":"CBS Disques","compositeurs":"Jean-Jacques Goldman","annee":1987},
+  {"url":"https://files.catbox.moe/04ofvb.mp4","titre":"Cette Année La","artiste":"M. Pokora","label":"TF1 Musique","compositeurs":"Claude François, Bob Gaudio, Eddy Marnay","annee":2016},
+  {"url":"https://files.catbox.moe/o1rrah.mp4","titre":"The Final Countdown","artiste":"Europe","label":"Epic Records","compositeurs":"Joey Tempest","annee":1986},
+  {"url":"https://files.catbox.moe/ilrv1p.mp4","titre":"Midi Sur Novembre","artiste":"Louane Feat. Julien Doré","label":"Island Records","compositeurs":"Louane, Julien Doré","annee":2018},
+  {"url":"https://files.catbox.moe/rppbme.mp4","titre":"Careless Whisper","artiste":"George Michael","label":"Epic Records","compositeurs":"George Michael, Andrew Ridgeley","annee":1984},
+  {"url":"https://files.catbox.moe/11uznh.mp4","titre":"I Wanna Dance With Somebody (Who Loves Me)","artiste":"Whitney Houston","label":"Arista Records","compositeurs":"George Merrill, Shannon Rubicam","annee":1987},
+  {"url":"https://files.catbox.moe/qek94p.mp4","titre":"Running Up That Hill","artiste":"Kate Bush","label":"EMI Records","compositeurs":"Kate Bush","annee":1985},
+  {"url":"https://files.catbox.moe/k8rqcm.mp4","titre":"Wicked Game","artiste":"Chris Isaak","label":"Reprise Records","compositeurs":"Chris Isaak","annee":1990},
+  {"url":"https://files.catbox.moe/xf3itu.mp4","titre":"Je Marche Seul","artiste":"Jean-Jacques Goldman","label":"CBS Disques","compositeurs":"Jean-Jacques Goldman","annee":1984},
+  {"url":"https://files.catbox.moe/cn4s2m.mp4","titre":"Ghostbusters","artiste":"Ray Parker Jr.","label":"Arista Records","compositeurs":"Ray Parker Jr.","annee":1984},
+  {"url":"https://files.catbox.moe/hbnmy9.mp4","titre":"Smooth Operator","artiste":"Sade","label":"Epic Records","compositeurs":"Sade Adu, Ray St. John","annee":1984},
+  {"url":"https://files.catbox.moe/7ur1m9.mp4","titre":"Pour Que Tu M'Aimes Encore","artiste":"Celine Dion","label":"Columbia Records","compositeurs":"Jean-Jacques Goldman","annee":1995},
+  {"url":"https://files.catbox.moe/epp069.mp4","titre":"Remember The Time","artiste":"Michael Jackson","label":"Jivepic Sony BMG","compositeurs":"Michael Jackson, Teddy Riley, Bernard Belle","annee":1992},
+  {"url":"https://files.catbox.moe/jf6utq.mp4","titre":"Encore Et Encore","artiste":"Francis Cabrel","label":"Columbia Records","compositeurs":"Francis Cabrel","annee":1990},
+  {"url":"https://files.catbox.moe/0cp777.mp4","titre":"Rock With You","artiste":"Michael Jackson","label":"Jivepic Sony Music","compositeurs":"Rod Temperton","annee":1980},
+  {"url":"https://files.catbox.moe/h1214o.mp4","titre":"XXL","artiste":"Mylene Farmer","label":"Polydor","compositeurs":"Mylène Farmer, Laurent Boutonnat","annee":1995},
+  {"url":"https://files.catbox.moe/6lpnih.mp4","titre":"Say Say Say","artiste":"Paul McCartney Feat. Michael Jackson","label":"Jivepic Sony BMG","compositeurs":"Paul McCartney, Michael Jackson","annee":1983},
+  {"url":"https://files.catbox.moe/yn3x1x.mp4","titre":"Hold My Hand","artiste":"Lady Gaga","label":"Interscope Records","compositeurs":"Lady Gaga, BloodPop","annee":2022},
+  {"url":"https://files.catbox.moe/qzil55.mp4","titre":"Another One Bites The Dust","artiste":"Queen","label":"EMI Records","compositeurs":"John Deacon","annee":1980},
+  {"url":"https://files.catbox.moe/bur9lo.mp4","titre":"Allumer Le Feu","artiste":"Johnny Hallyday","label":"Philips","compositeurs":"Zazie, Pascal Obispo, Pierre Jaconelli","annee":1998},
+  {"url":"https://files.catbox.moe/df6zze.mp4","titre":"Mistral Gagnant","artiste":"Renaud","label":"Virgin","compositeurs":"Renaud Séchan","annee":1985},
+  {"url":"https://files.catbox.moe/ypvseg.mp4","titre":"Take My Breath Away","artiste":"Berlin","label":"Columbia Records","compositeurs":"Giorgio Moroder, Tom Whitlock","annee":1986},
+  {"url":"https://files.catbox.moe/2ciyd5.mp4","titre":"Come","artiste":"Jain","label":"Columbia Records","compositeurs":"Jeanne Galice","annee":2015},
+  {"url":"https://files.catbox.moe/v5vh6h.mp4","titre":"Money Money Money","artiste":"ABBA","label":"Polar Music","compositeurs":"Benny Andersson, Björn Ulvaeus","annee":1976},
+  {"url":"https://files.catbox.moe/wb0kyp.mp4","titre":"Love Never Felt So Good","artiste":"Michael Jackson","label":"Jivepic Sony BMG","compositeurs":"Michael Jackson, Paul Anka","annee":2014},
+  {"url":"https://files.catbox.moe/4yppx8.mp4","titre":"Sans Contrefaçon","artiste":"Mylene Farmer","label":"Polydor","compositeurs":"Mylène Farmer, Laurent Boutonnat","annee":1987},
+  {"url":"https://files.catbox.moe/g0seb4.mp4","titre":"Les Princes Des Villes","artiste":"Michel Berger","label":"Barclay","compositeurs":"Michel Berger","annee":1981},
+  {"url":"https://files.catbox.moe/z4srro.mp4","titre":"Fields Of Gold","artiste":"Sting","label":"A&M Records","compositeurs":"Sting","annee":1993},
+  {"url":"https://files.catbox.moe/l66l9n.mp4","titre":"Original Sin","artiste":"INXS","label":"Mercury Records","compositeurs":"Michael Hutchence, Andrew Farriss","annee":1983},
+  {"url":"https://files.catbox.moe/mm9ur4.mp4","titre":"Scream","artiste":"Michael Jackson Feat. Janet Jackson","label":"Jivepic Sony Music","compositeurs":"Michael Jackson","annee":1995},
+  {"url":"https://files.catbox.moe/hc8nrb.mp4","titre":"I Feel It Coming","artiste":"The Weeknd Feat. Daft Punk","label":"XO/Republic Records","compositeurs":"A.Tesfaye, G.de Homem-Christo, T.Bangalter, M.McKinney, H.Walter, É.Chédeville","annee":2016},
+  {"url":"https://files.catbox.moe/4ucd7o.mp4","titre":"It's Not Right But It's Okay","artiste":"Whitney Houston","label":"Arista Records","compositeurs":"L.Daniels, R.Jerkins, F.Jerkins III, I.Phillips, T.Estes","annee":1999},
+  {"url":"https://files.catbox.moe/u9rd3z.mp4","titre":"Thriller","artiste":"Michael Jackson","label":"Sony Music Legacy Sony BMG","compositeurs":"Rod Temperton","annee":1983},
+  {"url":"https://files.catbox.moe/q5qsc5.mp4","titre":"Walking On The Moon","artiste":"The Police","label":"A&M","compositeurs":"Sting","annee":1979},
+  {"url":"https://files.catbox.moe/jpdxbo.mp4","titre":"Caribbean Queen (No More Love On The Run)","artiste":"Billy Ocean","label":"Jive Records","compositeurs":"Billy Ocean, Keith Diamond","annee":1984},
+  {"url":"https://files.catbox.moe/gc1z0k.mp4","titre":"Le Paradis Blanc","artiste":"Michel Berger","label":"Apache, WEA","compositeurs":"Michel Berger","annee":1990},
+  {"url":"https://files.catbox.moe/166ptw.mp4","titre":"One Night In Bangkok","artiste":"Murray Head","label":"RCA","compositeurs":"Benny Andersson, Björn Ulvaeus","annee":1984},
+  {"url":"https://files.catbox.moe/7yzurh.mp4","titre":"Espresso","artiste":"Sabrina Carpenter","label":"Island Records","compositeurs":"S.Carpenter, J.Bunetta, A.Allen, S.Jones","annee":2024},
+  {"url":"https://files.catbox.moe/q9tb3s.mp4","titre":"Coeur Maladroit","artiste":"Marine","label":"Island Records","compositeurs":"Marine, Sébastien Rousselet","annee":2025},
+  {"url":"https://files.catbox.moe/2utpgi.mp4","titre":"Don't Go","artiste":"Yazoo","label":"Mute Records / Sire Records","compositeurs":"Vince Clark","annee":1982},
+  {"url":"https://files.catbox.moe/115lcc.mp4","titre":"PS Je T'aime","artiste":"Christophe Willem","label":"RCA / Sony Music","compositeurs":"Slimane, Meïr Salah, Yaacov Salah","annee":2022},
+  {"url":"https://files.catbox.moe/ra28jc.mp4","titre":"Relax","artiste":"Frankie Goes To Hollywood","label":"ZTT Records","compositeurs":"P.Gill, H.Johnson, M.O'Toole, B.Nash","annee":1983},
+  {"url":"https://files.catbox.moe/adauii.mp4","titre":"Un Jour Au Mauvais Endroit","artiste":"Calogero","label":"Polydor / Rapas / Universal","compositeurs":"Marie Bastide, Calogero","annee":2014},
+  {"url":"https://files.catbox.moe/85sr8e.mp4","titre":"Last Christmas","artiste":"Wham!","label":"Epic Records","compositeurs":"George Michael","annee":1984},
+  {"url":"https://files.catbox.moe/dry1ly.mp4","titre":"Toxic","artiste":"Britney Spears","label":"Jive Records","compositeurs":"C.Dennis, H.Jonback, C.Karlsson, P.Winnberg","annee":2004},
+  {"url":"https://files.catbox.moe/n56lm2.mp4","titre":"When I Was Your Man","artiste":"Bruno Mars","label":"Atlantic","compositeurs":"B.Mars, P.Lawrence, A.Levine, A.Wyatt","annee":2013},
+  {"url":"https://files.catbox.moe/9rnwhq.mp4","titre":"La Chanson Des Restos","artiste":"Les Enfoires","label":"Martinez Lederman Productions / CBS Records","compositeurs":"Jean-Jacques Goldman","annee":1986},
+  {"url":"https://files.catbox.moe/k9rg2q.mp4","titre":"Wonderful Life","artiste":"Black","label":"Ugly Man / A&M","compositeurs":"Colin Vearncombe","annee":1986},
+  {"url":"https://files.catbox.moe/uir0sn.mp4","titre":"Starlight","artiste":"The Supermen Lovers featuring Mani Hoffman","label":"Vogue","compositeurs":"Guillaume Atlan, Mani Hoffman","annee":2001}
+];
+
+let playlist = [...playlistSource];
+const player = document.getElementById('player');
+let currentIndex = 0;
+
+function initPlaylist() {
+  shuffle(playlist);
+  currentIndex = 0;
+  loadVideo(currentIndex);
+}
+
+function shuffle(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+}
+
+function loadVideo(index) {
+  if (index >= playlist.length) { shuffle(playlist); index = 0; }
+  if (index < 0) index = playlist.length - 1;
+  currentIndex = index;
+  
+  const item = playlist[currentIndex];
+  resetLowerThird();
+
+  if (window.Hls && Hls.isSupported() && item.url.includes('.m3u8')) {
+    if (window.hls) window.hls.destroy();
+    window.hls = new Hls();
+    window.hls.loadSource(item.url);
+    window.hls.attachMedia(player);
+  } else {
+    player.src = item.url;
+    player.load();
+  }
+  player.play().catch(()=>{});
+}
+
+player.addEventListener('ended', () => {
+  currentIndex++;
+  loadVideo(currentIndex);
+});
+
+/* ── GESTION DU LOWER THIRD ── */
+let ltTimer = null;
+let ltRollInterval = null;
+let ltActive = false;
+let widthsArray = [0, 0, 0, 0];
+
+function resetLowerThird() {
+  clearTimeout(ltTimer);
+  clearInterval(ltRollInterval);
+  const lt = document.getElementById('lowerThird');
+  lt.style.display = 'none';
+  
+  const elements = lt.querySelectorAll('.line, .red-block, .sub-text-area');
+  elements.forEach(el => el.classList.remove('lt-enter', 'lt-exit'));
+  
+  document.getElementById('textRoller').style.transform = 'translateY(0px)';
+  ltActive = false;
+}
+
+function triggerLowerThird() {
+  if (ltActive) return;
+  ltActive = true;
+
+  const current = playlist[currentIndex];
+  
+  document.getElementById('ltArtistText').textContent = current.artiste.toUpperCase();
+  document.getElementById('ltItem0').textContent = current.titre.toUpperCase();
+  document.getElementById('ltItem1').textContent = current.compositeurs ? current.compositeurs.toUpperCase() : 'COMPOSITEUR INCONNU';
+  document.getElementById('ltItem2').textContent = `${current.label.toUpperCase()} · ${current.annee}`;
+  document.getElementById('ltItem3').textContent = current.titre.toUpperCase();
+
+  const lt = document.getElementById('lowerThird');
+  lt.style.display = 'block';
+
+  const enterElements = lt.querySelectorAll('.line, .red-block, .sub-text-area');
+  enterElements.forEach(el => el.classList.add('lt-enter'));
+
+  const item0Width = document.getElementById('ltItem0').offsetWidth;
+  const item1Width = document.getElementById('ltItem1').offsetWidth;
+  const item2Width = document.getElementById('ltItem2').offsetWidth;
+  const item3Width = document.getElementById('ltItem3').offsetWidth;
+  widthsArray = [item0Width, item1Width, item2Width, item3Width];
+
+  const whiteBlock = document.getElementById('whiteBlock');
+  const textRoller = document.getElementById('textRoller');
+
+  whiteBlock.style.width = `${widthsArray[0]}px`;
+
+  let step = 0;
+  ltRollInterval = setInterval(() => {
+    step++;
+    if (step <= 2) {
+      textRoller.style.transform = `translateY(-${step * 30}px)`;
+      whiteBlock.style.width = `${widthsArray[step]}px`;
+    } 
+    else if (step === 3) {
+      textRoller.style.transform = `translateY(-${step * 30}px)`;
+      whiteBlock.style.width = `${widthsArray[3]}px`;
+      clearInterval(ltRollInterval);
+    }
+  }, 3500);
+
+  ltTimer = setTimeout(() => {
+    closeLowerThird();
+  }, SHOW_DURATION * 1000);
+}
+
+function closeLowerThird() {
+  const lt = document.getElementById('lowerThird');
+  const whiteBlock = document.getElementById('whiteBlock');
+
+  lt.querySelectorAll('.line, .red-block').forEach(el => {
+    el.classList.remove('lt-enter');
+    el.style.transformOrigin = 'left';
+    void el.offsetWidth;
+    el.style.animation = 'lineClose 0.5s cubic-bezier(0.77,0,0.175,1) forwards';
+  });
+
+  whiteBlock.classList.remove('lt-enter');
+  whiteBlock.style.transition = 'width 0.45s cubic-bezier(0.77,0,0.175,1), opacity 0.2s ease';
+  whiteBlock.style.width = '0px';
+  whiteBlock.style.opacity = '0';
+
+  setTimeout(() => {
+    lt.style.display = 'none';
+    lt.querySelectorAll('.line, .red-block').forEach(el => {
+      el.style.animation = '';
+      el.style.transformOrigin = '';
+    });
+    whiteBlock.style.transition = '';
+    whiteBlock.style.width = '';
+    whiteBlock.style.opacity = '';
+    ltActive = false;
+  }, 600);
+}
+
+player.addEventListener('timeupdate', () => {
+  const current = player.currentTime;
+  const total = player.duration;
+  if (!total) return;
+
+  if (current >= SHOW_AFTER && current < SHOW_AFTER + 1 && !ltActive) {
+    triggerLowerThird();
+  }
+  if (total - current <= BEFORE_END && total - current > BEFORE_END - 1 && !ltActive) {
+    triggerLowerThird();
+  }
+});
+
+/* ── SPLASH ── */
+document.getElementById('splashBtn').addEventListener('click', () => {
+  document.getElementById('splash').style.display = 'none';
+  initPlaylist();
+});
+
+/* ── MOTEUR DE RECHERCHE ── */
+(function(){
+  const input = document.getElementById('searchInput');
+  const results = document.getElementById('searchResults');
+
+  function renderResults(query) {
+    results.innerHTML = '';
+    
+    if (!query.trim()) {
+      const top7 = playlistSource.slice(0, 7);
+      const header = document.createElement('div');
+      header.style.fontSize = '12px';
+      header.style.color = 'rgba(255,255,255,0.4)';
+      header.style.padding = '8px 14px 4px 14px';
+      header.style.textTransform = 'uppercase';
+      header.style.letterSpacing = '1px';
+      header.textContent = 'Suggestions :';
+      results.appendChild(header);
+
+      top7.forEach(item => createResultItem(item));
+      results.style.display = 'block';
+      return;
+    }
+    
+    const matched = playlistSource.filter(item => 
+      item.titre.toLowerCase().includes(query.toLowerCase()) ||
+      item.artiste.toLowerCase().includes(query.toLowerCase())
+    );
+
+    if (matched.length === 0) { results.style.display = 'none'; return; }
+
+    matched.forEach(item => createResultItem(item));
+    results.style.display = 'block';
+  }
+
+  function createResultItem(item) {
+    const div = document.createElement('div');
+    div.innerHTML = `${item.titre} <br><span>${item.artiste}</span>`;
+    div.addEventListener('click', () => {
+      const foundIndex = playlist.findIndex(p => p.url === item.url);
+      if (foundIndex !== -1) {
+        loadVideo(foundIndex);
+      } else {
+        playlist.splice(currentIndex + 1, 0, item);
+        loadVideo(currentIndex + 1);
+      }
+      input.value = '';
+      results.style.display = 'none';
+    });
+    results.appendChild(div);
+  }
+
+  input.addEventListener('input', () => renderResults(input.value));
+  input.addEventListener('focus', () => { showControls(); renderResults(input.value); });
+  
+  document.addEventListener('click', e => {
+    if (!document.getElementById('searchWrapper').contains(e.target)) {
+      results.style.display = 'none';
+    }
+  });
+})();
+
+/* ── FULLSCREEN ── */
+document.getElementById('fullscreenBtn').addEventListener('click', () => {
+  if (document.fullscreenElement) document.exitFullscreen();
+  else document.documentElement.requestFullscreen();
+});
+
+/* ── HORLOGE PARIS ── */
+function updateParisTime() {
+  const options = { timeZone: 'Europe/Paris', hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' };
+  document.getElementById('parisTime').textContent = new Intl.DateTimeFormat('fr-FR', options).format(new Date());
+}
+setInterval(updateParisTime, 1000);
+updateParisTime();
+
+/* ── CONTRÔLES AUTO-MASQUAGE ── */
+let hideControlsTimer = null;
+function showControls() {
+  document.body.classList.remove('controls-hidden');
+  clearTimeout(hideControlsTimer);
+  hideControlsTimer = setTimeout(() => document.body.classList.add('controls-hidden'), 3000);
+}
+document.addEventListener('mousemove', showControls);
+document.addEventListener('touchstart', showControls);
+</script>
+</body>
+</html>
