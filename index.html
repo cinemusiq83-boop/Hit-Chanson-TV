@@ -574,9 +574,15 @@ function resetLowerThird() {
 
 function triggerLowerThird() {
   if (ltActive) return;
-  ltActive = true;
 
   const current = playlist[currentIndex];
+
+  // Ne pas afficher le lower third pour Michael Jackson ou The Jacksons
+  const excludedArtists = ['michael jackson', 'the jacksons'];
+  const artistLower = current.artiste.toLowerCase();
+  if (excludedArtists.some(name => artistLower.includes(name))) return;
+
+  ltActive = true;
   
   document.getElementById('ltArtistText').textContent = current.artiste.toUpperCase();
   document.getElementById('ltItem0').textContent = current.titre.toUpperCase();
