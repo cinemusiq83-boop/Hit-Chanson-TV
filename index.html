@@ -297,8 +297,8 @@ button {
 <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.13/dist/hls.min.js"></script>
 <script>
 const SHOW_AFTER    = 15;
-const BEFORE_END    = 35;
-const SHOW_DURATION = 13;
+const BEFORE_END    = 36;
+const SHOW_DURATION = 10;
 
 const LOGO_URL = "https://storage.e.jimdo.com/cdn-cgi/image/quality=85,fit=scale-down,format=auto,trim=0;0;0;0,width=477,height=480/image/531025464/077bc616-c1cb-480e-a1bf-1ef35b06cd8e.png";
 document.getElementById('logo').style.backgroundImage = `url(${LOGO_URL})`;
@@ -451,7 +451,7 @@ const playlistSource = [
   {"url":"https://files.catbox.moe/qek94p.mp4","titre":"Running Up That Hill","artiste":"Kate Bush","label":"EMI Records","compositeurs":"Kate Bush","annee":1985},
   {"url":"https://files.catbox.moe/k8rqcm.mp4","titre":"Wicked Game","artiste":"Chris Isaak","label":"Reprise Records","compositeurs":"Chris Isaak","annee":1990},
   {"url":"https://files.catbox.moe/xf3itu.mp4","titre":"Je Marche Seul","artiste":"Jean-Jacques Goldman","label":"CBS Disques","compositeurs":"Jean-Jacques Goldman","annee":1984},
-  {"url":"https://files.catbox.moe/cn4s2m.mp4","titre":"Ghostbusters","artiste":"Ray Parker Jr.","label":"SME France Sony Music","compositeurs":"Ray Parker Jr.","annee":1984,"dezoom":true},
+  {"url":"https://files.catbox.moe/emk0iu.mp4","titre":"Ghostbusters","artiste":"Ray Parker Jr.","label":"SME France Sony Music","compositeurs":"Ray Parker Jr.","annee":1984,"dezoom":true},
   {"url":"https://files.catbox.moe/hbnmy9.mp4","titre":"Smooth Operator","artiste":"Sade","label":"Epic Records","compositeurs":"Sade Adu, Ray St. John","annee":1984},
   {"url":"https://files.catbox.moe/7ur1m9.mp4","titre":"Pour Que Tu M'Aimes Encore","artiste":"Celine Dion","label":"Columbia Records","compositeurs":"Jean-Jacques Goldman","annee":1995},
   {"url":"https://files.catbox.moe/jf6utq.mp4","titre":"Encore Et Encore","artiste":"Francis Cabrel","label":"Columbia Records","compositeurs":"Francis Cabrel","annee":1990},
@@ -460,7 +460,7 @@ const playlistSource = [
   {"url":"https://files.catbox.moe/qzil55.mp4","titre":"Another One Bites The Dust","artiste":"Queen","label":"EMI Records","compositeurs":"John Deacon","annee":1980},
   {"url":"https://files.catbox.moe/bur9lo.mp4","titre":"Allumer Le Feu","artiste":"Johnny Hallyday","label":"Philips","compositeurs":"Zazie, Pascal Obispo, Pierre Jaconelli","annee":1998},
   {"url":"https://files.catbox.moe/df6zze.mp4","titre":"Mistral Gagnant","artiste":"Renaud","label":"Virgin","compositeurs":"Renaud Séchan","annee":1985},
-  {"url":"https://files.catbox.moe/ypvseg.mp4","titre":"Take My Breath Away","artiste":"Berlin","label":"SME France Sony Music","compositeurs":"Giorgio Moroder, Tom Whitlock","annee":1986,"dezoom":true},
+  {"url":"https://files.catbox.moe/hbi1w8.mp4","titre":"Take My Breath Away","artiste":"Berlin","label":"SME France Sony Music","compositeurs":"Giorgio Moroder, Tom Whitlock","annee":1986,"dezoom":true},
   {"url":"https://files.catbox.moe/2ciyd5.mp4","titre":"Come","artiste":"Jain","label":"Columbia Records","compositeurs":"Jeanne Galice","annee":2015},
   {"url":"https://files.catbox.moe/v5vh6h.mp4","titre":"Money Money Money","artiste":"ABBA","label":"Polar Music","compositeurs":"Benny Andersson, Björn Ulvaeus","annee":1976},
   {"url":"https://files.catbox.moe/4yppx8.mp4","titre":"Sans Contrefaçon","artiste":"Mylene Farmer","label":"Polydor","compositeurs":"Mylène Farmer, Laurent Boutonnat","annee":1987},
@@ -640,7 +640,7 @@ function triggerLowerThird() {
       whiteBlock.style.width = `${widthsArray[3]}px`;
       clearInterval(ltRollInterval);
     }
-  }, 3500);
+  }, 2000);
 
   ltTimer = setTimeout(() => {
     closeLowerThird();
