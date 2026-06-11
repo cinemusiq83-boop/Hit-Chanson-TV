@@ -637,12 +637,11 @@ function triggerLowerThird() {
   const whiteBlock = document.getElementById('whiteBlock');
   const textRoller = document.getElementById('textRoller');
 
-  // Calculer le décalage à partir de la 4ème lettre du nom de l'artiste
+  // Calculer le décalage à partir du milieu de la 2ème lettre du nom de l'artiste
   const artistText = document.getElementById('ltArtistText');
   const artistStr = artistText.textContent;
   let offset3Letters = 0;
-  if (artistStr.length >= 3) {
-    // Créer un span temporaire pour mesurer la largeur des 2 premières lettres
+  if (artistStr.length >= 2) {
     const measureSpan = document.createElement('span');
     measureSpan.style.cssText = `
       font-family: 'Bebas Neue', Impact, sans-serif;
@@ -654,10 +653,19 @@ function triggerLowerThird() {
       visibility: hidden;
       padding: 0 16px;
     `;
-    measureSpan.textContent = artistStr.slice(0, 2);
+    // Mesure la largeur jusqu'à la fin de la 1ère lettre
+    measureSpan.textContent = artistStr.slice(0, 1);
     document.body.appendChild(measureSpan);
-    offset3Letters = measureSpan.offsetWidth;
+    const width1 = measureSpan.offsetWidth;
+
+    // Mesure la largeur jusqu'à la fin de la 2ème lettre
+    measureSpan.textContent = artistStr.slice(0, 2);
+    const width2 = measureSpan.offsetWidth;
     document.body.removeChild(measureSpan);
+
+    // Milieu de la 2ème lettre = fin de la 1ère + moitié de la largeur de la 2ème
+    const letterWidth = width2 - width1;
+    offset3Letters = width1 + letterWidth / 2;
   }
 
   whiteBlock.style.left = `${offset3Letters}px`;
