@@ -640,8 +640,8 @@ function triggerLowerThird() {
   const artistText = document.getElementById('ltArtistText');
   const artistStr = artistText.textContent;
   let offset3Letters = 0;
-  if (artistStr.length >= 4) {
-    // Créer un span temporaire pour mesurer la largeur des 3 premières lettres
+  if (artistStr.length >= 3) {
+    // Créer un span temporaire pour mesurer la largeur des 2 premières lettres
     const measureSpan = document.createElement('span');
     measureSpan.style.cssText = `
       font-family: 'Bebas Neue', Impact, sans-serif;
@@ -653,7 +653,7 @@ function triggerLowerThird() {
       visibility: hidden;
       padding: 0 16px;
     `;
-    measureSpan.textContent = artistStr.slice(0, 3);
+    measureSpan.textContent = artistStr.slice(0, 2);
     document.body.appendChild(measureSpan);
     offset3Letters = measureSpan.offsetWidth;
     document.body.removeChild(measureSpan);
