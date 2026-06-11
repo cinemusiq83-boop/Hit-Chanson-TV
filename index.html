@@ -286,10 +286,10 @@ button {
 
   <div class="sub-text-area" id="whiteBlock">
       <div class="rolling-wrapper" id="textRoller">
-          <div class="text-item" id="ltItem0">TITRE</div>
-          <div class="text-item" id="ltItem1">COMPOSITEURS</div>
-          <div class="text-item" id="ltItem2">LABEL · ANNÉE</div>
           <div class="text-item" id="ltItem3">TITRE</div>
+          <div class="text-item" id="ltItem2">LABEL · ANNÉE</div>
+          <div class="text-item" id="ltItem1">COMPOSITEURS</div>
+          <div class="text-item" id="ltItem0">TITRE</div>
       </div>
   </div>
 </div>
@@ -637,19 +637,18 @@ function triggerLowerThird() {
   const textRoller = document.getElementById('textRoller');
 
   whiteBlock.style.width = `${widthsArray[0]}px`;
+  textRoller.style.transition = 'none';
+  textRoller.style.transform = 'translateY(-90px)';
+  setTimeout(() => { textRoller.style.transition = ''; }, 50);
 
   let step = 0;
   ltRollInterval = setInterval(() => {
     step++;
-    if (step <= 2) {
-      textRoller.style.transform = `translateY(-${step * 30}px)`;
+    if (step <= 3) {
+      textRoller.style.transform = `translateY(${-90 + step * 30}px)`;
       whiteBlock.style.width = `${widthsArray[step]}px`;
-    } 
-    else if (step === 3) {
-      textRoller.style.transform = `translateY(-${step * 30}px)`;
-      whiteBlock.style.width = `${widthsArray[3]}px`;
-      clearInterval(ltRollInterval);
     }
+    if (step === 3) clearInterval(ltRollInterval);
   }, 2000);
 
   ltTimer = setTimeout(() => {
@@ -684,7 +683,7 @@ function closeLowerThird() {
     whiteBlock.style.opacity = '';
     const textRoller = document.getElementById('textRoller');
     textRoller.style.transition = 'none';
-    textRoller.style.transform = 'translateY(0px)';
+    textRoller.style.transform = 'translateY(-90px)';
     setTimeout(() => { textRoller.style.transition = ''; }, 50);
     ltActive = false;
   }, 600);
