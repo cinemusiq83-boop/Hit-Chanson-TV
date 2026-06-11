@@ -682,6 +682,10 @@ function closeLowerThird() {
     whiteBlock.style.transition = '';
     whiteBlock.style.width = '';
     whiteBlock.style.opacity = '';
+    const textRoller = document.getElementById('textRoller');
+    textRoller.style.transition = 'none';
+    textRoller.style.transform = 'translateY(0px)';
+    setTimeout(() => { textRoller.style.transition = ''; }, 50);
     ltActive = false;
   }, 600);
 }
