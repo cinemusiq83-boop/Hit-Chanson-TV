@@ -546,17 +546,17 @@ let playlist = [...playlistSource];
 const player = document.getElementById('player');
 let currentIndex = 0;
 
-function initPlaylist() {
-  shuffle(playlist);
-  currentIndex = 0;
-  loadVideo(currentIndex);
-}
-
 function shuffle(array) {
   for (let i = array.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [array[i], array[j]] = [array[j], array[i]];
   }
+}
+shuffle(playlist);
+
+function initPlaylist() {
+  currentIndex = 0;
+  loadVideo(currentIndex);
 }
 
 function loadVideo(index) {
@@ -752,7 +752,7 @@ document.getElementById('splashBtn').addEventListener('click', () => {
     results.innerHTML = '';
     
     if (!query.trim()) {
-      const top7 = playlistSource.slice(0, 7);
+      const top7 = playlist;
       const header = document.createElement('div');
       header.style.fontSize = '12px';
       header.style.color = 'rgba(255,255,255,0.4)';
