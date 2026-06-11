@@ -636,6 +636,30 @@ function triggerLowerThird() {
   const whiteBlock = document.getElementById('whiteBlock');
   const textRoller = document.getElementById('textRoller');
 
+  // Calculer le décalage à partir de la 4ème lettre du nom de l'artiste
+  const artistText = document.getElementById('ltArtistText');
+  const artistStr = artistText.textContent;
+  let offset3Letters = 0;
+  if (artistStr.length >= 4) {
+    // Créer un span temporaire pour mesurer la largeur des 3 premières lettres
+    const measureSpan = document.createElement('span');
+    measureSpan.style.cssText = `
+      font-family: 'Bebas Neue', Impact, sans-serif;
+      font-size: 24px;
+      font-weight: 400;
+      letter-spacing: 2.5px;
+      white-space: nowrap;
+      position: absolute;
+      visibility: hidden;
+      padding: 0 16px;
+    `;
+    measureSpan.textContent = artistStr.slice(0, 3);
+    document.body.appendChild(measureSpan);
+    offset3Letters = measureSpan.offsetWidth;
+    document.body.removeChild(measureSpan);
+  }
+
+  whiteBlock.style.left = `${offset3Letters}px`;
   whiteBlock.style.width = `${widthsArray[0]}px`;
   textRoller.style.transition = 'none';
   textRoller.style.transform = 'translateY(-90px)';
@@ -671,6 +695,7 @@ function closeLowerThird() {
   whiteBlock.style.transition = 'width 0.45s cubic-bezier(0.77,0,0.175,1), opacity 0.2s ease';
   whiteBlock.style.width = '0px';
   whiteBlock.style.opacity = '0';
+  whiteBlock.style.left = '0px';
 
   setTimeout(() => {
     lt.style.display = 'none';
@@ -681,6 +706,7 @@ function closeLowerThird() {
     whiteBlock.style.transition = '';
     whiteBlock.style.width = '';
     whiteBlock.style.opacity = '';
+    whiteBlock.style.left = '';
     const textRoller = document.getElementById('textRoller');
     textRoller.style.transition = 'none';
     textRoller.style.transform = 'translateY(-90px)';
