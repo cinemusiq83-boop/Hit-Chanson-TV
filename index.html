@@ -145,7 +145,8 @@ button {
 .l-5a.lt-enter { animation: lineDraw 0.6s ease forwards 0.5s; }
 
 .l-5 { top: 53px; left: 0px; width: 50%; background-color: #ffffff; }
-.l-5.lt-enter { animation: lineDraw 0.6s ease forwards 0.5s, scanMove 1.6s ease-in-out 1.1s infinite alternate; }
+.l-5.lt-enter { animation: lineDraw 0.6s ease forwards 0.5s; }
+.l-5.lt-moving { animation: lineDraw 0.6s ease forwards 0.5s, scanMove 1.6s ease-in-out 0s infinite alternate; }
 
 .l-6 { top: 62px; left: 0px;   width: 90%;  background-color: #ffffff; }
 .l-6.lt-enter { animation: lineDraw 0.6s ease forwards 0.6s, scanMoveInverse 2.2s ease-in-out 1.2s infinite alternate; }
@@ -602,7 +603,7 @@ function resetLowerThird() {
   lt.style.display = 'none';
   
   const elements = lt.querySelectorAll('.line, .red-block, .sub-text-area');
-  elements.forEach(el => el.classList.remove('lt-enter', 'lt-exit'));
+  elements.forEach(el => el.classList.remove('lt-enter', 'lt-exit', 'lt-moving'));
   
   document.getElementById('textRoller').style.transform = 'translateY(0px)';
   ltActive = false;
@@ -678,6 +679,19 @@ function triggerLowerThird() {
   textRoller.style.transform = 'translateY(-90px)';
   setTimeout(() => { textRoller.style.transition = ''; }, 50);
 
+  // Aligner la ligne 5 avec le bord gauche du bloc blanc
+  const l5 = lt.querySelector('.l-5');
+  if (l5) l5.style.left = `${offset3Letters}px`;
+
+  // Aligner la ligne 5a pour qu'elle arrive exactement au début de la ligne 5
+  const l5a = lt.querySelector('.l-5a');
+  if (l5a) l5a.style.width = `${offset3Letters + 70}px`;
+
+  // Déclencher le mouvement de la ligne 5 quand le bloc blanc est visible (après fadeInBlock : 0.6s délai + 0.3s durée = 0.9s)
+  setTimeout(() => {
+    if (l5) l5.classList.add('lt-moving');
+  }, 900);
+
   let step = 0;
   ltRollInterval = setInterval(() => {
     step++;
@@ -698,7 +712,7 @@ function closeLowerThird() {
   const whiteBlock = document.getElementById('whiteBlock');
 
   lt.querySelectorAll('.line, .red-block').forEach(el => {
-    el.classList.remove('lt-enter');
+    el.classList.remove('lt-enter', 'lt-moving');
     el.style.transformOrigin = 'left';
     void el.offsetWidth;
     el.style.animation = 'lineClose 0.5s cubic-bezier(0.77,0,0.175,1) forwards';
@@ -716,6 +730,10 @@ function closeLowerThird() {
       el.style.animation = '';
       el.style.transformOrigin = '';
     });
+    const l5 = lt.querySelector('.l-5');
+    if (l5) l5.style.left = '0px';
+    const l5a = lt.querySelector('.l-5a');
+    if (l5a) l5a.style.width = '70px';
     whiteBlock.style.transition = '';
     whiteBlock.style.width = '';
     whiteBlock.style.opacity = '';
