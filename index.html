@@ -94,10 +94,31 @@ button {
   flex-direction: column;
   align-items: flex-start;
   z-index: 20;
-  opacity: 0.92;
+  opacity: 0;
   pointer-events: none;
   transition: opacity 0.4s ease;
 }
+
+/* ── INTRO HORLOGE (lignes façon lower third qui arrivent de la gauche) ── */
+#clockIntro {
+  position: absolute;
+  left: 7%;
+  top: 9%;
+  z-index: 21;
+  pointer-events: none;
+  display: none;
+}
+.ci-line {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  border-radius: 2px;
+  transform: scaleX(0);
+  transform-origin: left;
+}
+.ci-white { background-color: #ffffff; }
+.ci-red   { background-color: #c0191a; height: 4px; }
 
 #clockSecBar {
   width: 100%;
@@ -326,6 +347,14 @@ button {
   </div>
 </div>
 
+<div id="clockIntro">
+  <div class="ci-line ci-white"></div>
+  <div class="ci-line ci-white"></div>
+  <div class="ci-line ci-red"></div>
+  <div class="ci-line ci-white"></div>
+  <div class="ci-line ci-white"></div>
+  <div class="ci-line ci-white"></div>
+</div>
 <div id="parisTime">
   <div id="clockSecBar"><div id="clockSecFill" style="width:0%"></div></div>
   <div id="clockDigits">
@@ -369,11 +398,75 @@ const SHOW_DURATION = 10;
 
 const LOGO_URL = "https://storage.e.jimdo.com/cdn-cgi/image/quality=85,fit=scale-down,format=auto,trim=0;0;0;0,width=477,height=480/image/531025464/077bc616-c1cb-480e-a1bf-1ef35b06cd8e.png";
 document.getElementById('logo').style.backgroundImage = `url(${LOGO_URL})`;
+
+/* ── INTRO HORLOGE : dimensionnement des lignes sur la taille réelle de l'horloge ── */
+function syncClockIntroSize() {
+  const clock = document.getElementById('parisTime');
+  const intro = document.getElementById('clockIntro');
+  const rect = clock.getBoundingClientRect();
+  intro.style.width = rect.width + 'px';
+  intro.style.height = rect.height + 'px';
+  const lines = intro.querySelectorAll('.ci-line');
+  const step = rect.height / (lines.length + 1);
+  lines.forEach((el, i) => {
+    el.style.top = (step * (i + 1)) + 'px';
+  });
+}
+
+/* ── INTRO HORLOGE : animation des lignes qui arrivent de la gauche, puis apparition de l'horloge ── */
+let clockIntroTimer1 = null;
+let clockIntroTimer2 = null;
+function triggerClockIntro() {
+  clearTimeout(clockIntroTimer1);
+  clearTimeout(clockIntroTimer2);
+
+  const clockBox = document.getElementById('parisTime');
+  const intro = document.getElementById('clockIntro');
+  const lines = intro.querySelectorAll('.ci-line');
+
+  syncClockIntroSize();
+
+  // Horloge cachée pendant l'arrivée des lignes
+  clockBox.style.transition = 'none';
+  clockBox.style.opacity = '0';
+  void clockBox.offsetWidth;
+  clockBox.style.transition = 'opacity 0.4s ease';
+
+  // Réinitialiser puis lancer les lignes
+  intro.style.transition = 'none';
+  intro.style.opacity = '1';
+  intro.style.display = 'block';
+  lines.forEach((el) => {
+    el.style.animation = 'none';
+    el.style.transform = 'scaleX(0)';
+  });
+  void intro.offsetWidth;
+  lines.forEach((el, i) => {
+    el.style.animation = `lineDraw 0.5s ease forwards ${i * 0.1}s`;
+  });
+
+  const totalDuration = lines.length * 0.1 + 0.5; // durée totale de l'arrivée des lignes
+
+  clockIntroTimer1 = setTimeout(() => {
+    // Les lignes sont arrivées : fondu vers l'horloge
+    intro.style.transition = 'opacity 0.3s ease';
+    intro.style.opacity = '0';
+    clockBox.style.opacity = '0.92';
+
+    clockIntroTimer2 = setTimeout(() => {
+      intro.style.display = 'none';
+      lines.forEach((el) => {
+        el.style.animation = 'none';
+        el.style.transform = 'scaleX(0)';
+      });
+    }, 350);
+  }, totalDuration * 1000);
+}
 /* ══════════════════════════════════════
    PLAYLIST
 ══════════════════════════════════════ */
 const playlistSource = [
-  {"url":"https://files.catbox.moe/7zfg5q.mp4","titre":"Piu Bella Cosa","artiste":"Eros Ramazzotti","label":"DDD / BMG","compositeurs":"E.Ramazzotti, C.Guidetti, M.Fabrizio, A.Cogliati","annee":1996},
+ {"url":"https://files.catbox.moe/7zfg5q.mp4","titre":"Piu Bella Cosa","artiste":"Eros Ramazzotti","label":"DDD / BMG","compositeurs":"E.Ramazzotti, C.Guidetti, M.Fabrizio, A.Cogliati","annee":1996},
   {"url":"https://files.catbox.moe/wkzic6.mp4","titre":"Sacrifice","artiste":"Elton John","label":"Phonogram Records","compositeurs":"Elton John, Bernie Taupin","annee":1989},
   {"url":"https://files.catbox.moe/e35r43.mp4","titre":"Somebody's Watching Me","artiste":"Rockwell","label":"Motown Universal","compositeurs":"Rockwell","annee":1984},
   {"url":"https://files.catbox.moe/ailff8.mp4","titre":"Cherish","artiste":"Kool & The Gang","label":"De-Lite Records","compositeurs":"James Taylor, Ronald Bell, Kool & The Gang","annee":1985},
@@ -676,6 +769,7 @@ function loadVideo(index) {
   const item = playlist[currentIndex];
   player.style.objectFit = item.dezoom ? 'contain' : 'cover';
   resetLowerThird();
+  triggerClockIntro();
 
   if (window.Hls && Hls.isSupported() && item.url.includes('.m3u8')) {
     if (window.hls) window.hls.destroy();
@@ -979,6 +1073,10 @@ function resizeTvFrame() {
 resizeTvFrame();
 window.addEventListener('resize', resizeTvFrame);
 window.addEventListener('orientationchange', () => setTimeout(resizeTvFrame, 100));
+
+syncClockIntroSize();
+window.addEventListener('resize', syncClockIntroSize);
+window.addEventListener('orientationchange', () => setTimeout(syncClockIntroSize, 100));
 </script>
 </body>
 </html>
