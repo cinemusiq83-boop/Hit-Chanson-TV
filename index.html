@@ -16,6 +16,9 @@
 <link rel="apple-touch-icon" href="https://storage.e.jimdo.com/cdn-cgi/image/quality=85,fit=scale-down,format=auto,trim=0;0;0;0,width=800,height=800/image/545093144/951e7817-2005-4835-ace4-ca3170cdb9be.jpg">
 <link rel="icon" type="image/jpg" href="https://storage.e.jimdo.com/cdn-cgi/image/quality=85,fit=scale-down,format=auto,trim=0;0;0;0,width=800,height=800/image/545093144/951e7817-2005-4835-ace4-ca3170cdb9be.jpg">
 <style>
+/* ── ÉCHELLE GLOBALE DE L'INTERFACE (logo, lower third, horloge) ──
+   1.25 = équivalent du zoom navigateur à 125 %. Change cette valeur pour ajuster. */
+:root { --ui-scale: 1.25; --lt-scale: 1.25; --red-h: 44px; --white-h: 22px; }
 * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
 html, body { margin: 0; height: 100%; background: #000; overflow: hidden; font-family: 'Oswald', Arial, sans-serif; }
 
@@ -90,6 +93,8 @@ button {
   position: absolute;
   left: 7%;
   top: 9%;
+  transform: scale(var(--ui-scale));
+  transform-origin: left top;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -104,6 +109,8 @@ button {
   position: absolute;
   left: 7%;
   top: 9%;
+  transform: scale(var(--ui-scale));
+  transform-origin: left top;
   z-index: 21;
   pointer-events: none;
   display: none;
@@ -167,9 +174,11 @@ button {
 #logo {
   position: absolute;
   left: 5.2%;
-  top: 72%;
+  top: 71%;
   width: calc(13% + 10px);
   height: calc(15% + 10px);
+  transform: scale(var(--ui-scale));
+  transform-origin: left top;
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
@@ -184,10 +193,13 @@ button {
 #lowerThird {
   position: absolute;
   top: 76%;
-  left: calc(9.7% + 8.5% + 20px);
-  width: calc(100% - (10% + 8.5% + 40px));
-  max-width: calc(100% - (10% + 8.5% + 40px));
-  height: 74px;
+  /* à droite du logo agrandi : 5.2% + (13% + 10px) × échelle + marge */
+  left: calc(5.2% + (13% + 10px) * var(--ui-scale) + 14px);
+  /* largeur "avant échelle" pour que le bord droit reste à ~98% de l'écran */
+  width: calc((100% - (5.2% + (13% + 10px) * var(--ui-scale) + 14px) - 2%) / var(--lt-scale));
+  height: calc(var(--red-h) + var(--white-h));
+  transform: scale(var(--lt-scale));
+  transform-origin: left top;
   z-index: 30;
   pointer-events: none;
   display: none;
@@ -203,33 +215,33 @@ button {
 }
 
 /* Configuration des 6 lignes */
-.l-1 { top: 20px;  left: 8px;   width: 100%; background-color: #ffffff; }
+.l-1 { top: 12px;  left: 8px;   width: 100%; background-color: #ffffff; }
 .l-1.lt-enter { animation: lineDraw 0.6s ease forwards 0.1s, scanMove 1.8s ease-in-out 0.7s infinite alternate; }
 
-.l-2 { top: 29px; left: 8px;   width: 70%;  background-color: #ffffff; }
+.l-2 { top: 21px; left: 8px;   width: 81%;  background-color: #ffffff; }
 .l-2.lt-enter { animation: lineDraw 0.6s ease forwards 0.2s, scanMoveInverse 1.5s ease-in-out 0.8s infinite alternate; }
 
-.l-3 { top: 37px; left: 8px;   width: 80%;  height: 3px; background-color: #c0191a; }
+.l-3 { top: 30px; left: 8px;   width: 86%;  height: 3px; background-color: #c0191a; }
 .l-3.lt-enter { animation: lineDraw 0.6s ease forwards 0.3s, scanMove 1.2s ease-in-out 0.9s infinite alternate; }
 
-.l-4 { top: 44px; left: 8px; width: calc(60% + 35px); background-color: #ffffff; }
+.l-4 { top: 39px; left: 8px; width: 79%; background-color: #ffffff; }
 .l-4.lt-enter { animation: lineDraw 0.6s ease forwards 0.4s, scanMoveInverse 2s ease-in-out 1s infinite alternate; }
 
-.l-5a { top: 53px; left: -70px; width: 70px; background-color: #ffffff; transform-origin: right; }
+.l-5a { top: 49px; left: -48px; width: 48px; background-color: #ffffff; transform-origin: right; }
 .l-5a.lt-enter { animation: lineDraw 0.6s ease forwards 0.5s; }
 
-.l-5 { top: 53px; left: 0px; width: 50%; background-color: #ffffff; }
+.l-5 { top: 49px; left: 0px; width: 76%; background-color: #ffffff; }
 .l-5.lt-enter { animation: lineDraw 0.6s ease forwards 0.5s; }
 .l-5.lt-moving { animation: lineDraw 0.6s ease forwards 0.5s, scanMove 1.6s ease-in-out 0s infinite alternate; }
 
-.l-6 { top: 62px; left: 8px;   width: 90%;  background-color: #ffffff; }
+.l-6 { top: 59px; left: 8px;   width: 91%;  background-color: #ffffff; }
 .l-6.lt-enter { animation: lineDraw 0.6s ease forwards 0.6s, scanMoveInverse 2.2s ease-in-out 1.2s infinite alternate; }
 
 /* --- BLOC SUPÉRIEUR (ARTISTE ROUGE) --- */
 .center-band {
   position: absolute;
   top: 0px; left: 0px;
-  width: auto; height: 44px;
+  width: auto; height: var(--red-h);
   display: flex;
   align-items: center;
   z-index: 2;
@@ -238,7 +250,7 @@ button {
 .red-block {
   background-color: #c0191a;
   height: 100%;
-  padding: 0 16px;
+  padding: 0 11px 0 9px;
   display: flex;
   align-items: center;
   transform: scaleX(0);
@@ -254,17 +266,20 @@ button {
 .artist-text {
   color: #ffffff;
   font-family: 'Bebas Neue', Impact, sans-serif;
-  font-size: 24px;
-  font-weight: 400; 
-  letter-spacing: 2.5px;
+  font-size: 40px;
+  font-weight: 400;
+  letter-spacing: 0.5px;
+  line-height: 1;
+  padding-top: 2px;
+  -webkit-text-stroke: 0.5px #ffffff;
   white-space: nowrap;
 }
 
 /* --- BLOC INFÉRIEUR BLANC CHRONOMÉTRÉ --- */
 .sub-text-area {
   position: absolute;
-  top: 44px; left: 0px;
-  height: 30px;
+  top: var(--red-h); left: 0px;
+  height: var(--white-h);
   background-color: #ffffff;
   overflow: hidden;
   box-shadow: 0 4px 10px rgba(0,0,0,0.3);
@@ -293,17 +308,21 @@ button {
 }
 
 .text-item {
-  height: 30px;
+  height: var(--white-h);
   display: inline-flex;
   align-items: center;
-  padding: 0 15px;
-  color: #000000;
+  padding: 1px 1px 0 1px;
+  color: #1c1c1c;
   font-family: 'Bebas Neue', Impact, sans-serif;
-  font-size: 17px;
-  letter-spacing: 1.5px;
+  font-size: 22px;
+  line-height: 1;
+  letter-spacing: 1px;
+  -webkit-text-stroke: 0.4px #1c1c1c;
   white-space: nowrap;
   width: max-content;
+  overflow: hidden;
 }
+.text-item .ti { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* Animations Keyframes */
 @keyframes lineDraw  { from { transform: scaleX(0); } to { transform: scaleX(1); } }
@@ -381,10 +400,10 @@ button {
 
   <div class="sub-text-area" id="whiteBlock">
       <div class="rolling-wrapper" id="textRoller">
-          <div class="text-item" id="ltItem3">TITRE</div>
-          <div class="text-item" id="ltItem2">LABEL · ANNÉE</div>
-          <div class="text-item" id="ltItem1">COMPOSITEURS</div>
-          <div class="text-item" id="ltItem0">TITRE</div>
+          <div class="text-item" id="ltItem3"><span class="ti">TITRE</span></div>
+          <div class="text-item" id="ltItem2"><span class="ti">LABEL · ANNÉE</span></div>
+          <div class="text-item" id="ltItem1"><span class="ti">COMPOSITEURS</span></div>
+          <div class="text-item" id="ltItem0"><span class="ti">TITRE</span></div>
       </div>
   </div>
 </div><!-- /#lowerThird -->
@@ -403,7 +422,7 @@ document.getElementById('logo').style.backgroundImage = `url(${LOGO_URL})`;
 function syncClockIntroSize() {
   const clock = document.getElementById('parisTime');
   const intro = document.getElementById('clockIntro');
-  const rect = clock.getBoundingClientRect();
+  const rect = { width: clock.offsetWidth, height: clock.offsetHeight }; // offset* ignore la transform scale
   intro.style.width = rect.width + 'px';
   intro.style.height = rect.height + 'px';
   const lines = intro.querySelectorAll('.ci-line');
@@ -925,6 +944,7 @@ let ltTimer = null;
 let ltRollInterval = null;
 let ltActive = false;
 let widthsArray = [0, 0, 0, 0];
+const WHITE_H = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--white-h')) || 36;
 
 function resetLowerThird() {
   clearTimeout(ltTimer);
@@ -950,10 +970,10 @@ function triggerLowerThird() {
   ltActive = true;
   
   document.getElementById('ltArtistText').textContent = current.artiste.toUpperCase();
-  document.getElementById('ltItem0').textContent = current.titre.toUpperCase();
-  document.getElementById('ltItem1').textContent = current.compositeurs ? current.compositeurs.toUpperCase() : 'COMPOSITEUR INCONNU';
-  document.getElementById('ltItem2').textContent = `${current.label.toUpperCase()} · ${current.annee}`;
-  document.getElementById('ltItem3').textContent = current.titre.toUpperCase();
+  document.getElementById('ltItem0').firstElementChild.textContent = current.titre.toUpperCase();
+  document.getElementById('ltItem1').firstElementChild.textContent = current.compositeurs ? current.compositeurs.toUpperCase() : 'COMPOSITEUR INCONNU';
+  document.getElementById('ltItem2').firstElementChild.textContent = `${current.label.toUpperCase()} ${current.annee}`;
+  document.getElementById('ltItem3').firstElementChild.textContent = current.titre.toUpperCase();
 
   const lt = document.getElementById('lowerThird');
   lt.style.display = 'block';
@@ -961,59 +981,49 @@ function triggerLowerThird() {
   const enterElements = lt.querySelectorAll('.line, .red-block, .sub-text-area');
   enterElements.forEach(el => el.classList.add('lt-enter'));
 
-  const item0Width = document.getElementById('ltItem0').offsetWidth;
-  const item1Width = document.getElementById('ltItem1').offsetWidth;
-  const item2Width = document.getElementById('ltItem2').offsetWidth;
-  const item3Width = document.getElementById('ltItem3').offsetWidth;
-  widthsArray = [item0Width, item1Width, item2Width, item3Width];
-
   const whiteBlock = document.getElementById('whiteBlock');
   const textRoller = document.getElementById('textRoller');
 
-  // Calculer le décalage à partir du milieu de la 2ème lettre du nom de l'artiste
+  // Calculer le décalage : le bloc blanc démarre sous la 4ème lettre du nom de l'artiste
   const artistText = document.getElementById('ltArtistText');
   const artistStr = artistText.textContent;
   let offset3Letters = 0;
-  if (artistStr.length >= 2) {
+  {
+    const cs = getComputedStyle(artistText);
+    const padLeft = parseFloat(getComputedStyle(document.querySelector('.red-block')).paddingLeft) || 0;
     const measureSpan = document.createElement('span');
     measureSpan.style.cssText = `
-      font-family: 'Bebas Neue', Impact, sans-serif;
-      font-size: 24px;
-      font-weight: 400;
-      letter-spacing: 2.5px;
-      white-space: nowrap;
+      font-family: ${cs.fontFamily};
+      font-size: ${cs.fontSize};
+      font-weight: ${cs.fontWeight};
+      letter-spacing: ${cs.letterSpacing};
+      white-space: pre;
       position: absolute;
       visibility: hidden;
-      padding: 0 16px;
     `;
-    // Mesure la largeur jusqu'à la fin de la 1ère lettre
-    measureSpan.textContent = artistStr.slice(0, 1);
+    // Largeur des 3 premières lettres = bord gauche de la 4ème lettre
+    measureSpan.textContent = artistStr.slice(0, Math.min(3, artistStr.length));
     document.body.appendChild(measureSpan);
-    const width1 = measureSpan.offsetWidth;
-
-    // Mesure la largeur jusqu'à la fin de la 2ème lettre
-    measureSpan.textContent = artistStr.slice(0, 2);
-    const width2 = measureSpan.offsetWidth;
+    offset3Letters = padLeft + measureSpan.offsetWidth;
     document.body.removeChild(measureSpan);
-
-    // Milieu de la 2ème lettre = fin de la 1ère + moitié de la largeur de la 2ème
-    const letterWidth = width2 - width1;
-    offset3Letters = width1 + letterWidth / 2;
   }
+
+  // Largeurs naturelles de chaque ligne du bloc blanc
+  widthsArray = [0, 1, 2, 3].map(i => document.getElementById('ltItem' + i).offsetWidth);
 
   whiteBlock.style.left = `${offset3Letters}px`;
   whiteBlock.style.width = `${widthsArray[0]}px`;
   textRoller.style.transition = 'none';
-  textRoller.style.transform = 'translateY(-90px)';
+  textRoller.style.transform = `translateY(${-3 * WHITE_H}px)`;
   setTimeout(() => { textRoller.style.transition = ''; }, 50);
 
   // Aligner la ligne 5 avec le bord gauche du bloc blanc
   const l5 = lt.querySelector('.l-5');
-  if (l5) l5.style.left = `${offset3Letters}px`;
+  if (l5) { l5.style.left = `${offset3Letters}px`; l5.style.width = `calc(76% - ${offset3Letters}px)`; }
 
   // Aligner la ligne 5a pour qu'elle arrive exactement au début de la ligne 5
   const l5a = lt.querySelector('.l-5a');
-  if (l5a) l5a.style.width = `${offset3Letters + 70}px`;
+  if (l5a) l5a.style.width = `${offset3Letters + 48}px`;
 
   // Déclencher le mouvement de la ligne 5 quand le bloc blanc est visible (après fadeInBlock : 0.6s délai + 0.3s durée = 0.9s)
   setTimeout(() => {
@@ -1024,7 +1034,7 @@ function triggerLowerThird() {
   ltRollInterval = setInterval(() => {
     step++;
     if (step <= 3) {
-      textRoller.style.transform = `translateY(${-90 + step * 30}px)`;
+      textRoller.style.transform = `translateY(${-3 * WHITE_H + step * WHITE_H}px)`;
       whiteBlock.style.width = `${widthsArray[step]}px`;
     }
     if (step === 3) clearInterval(ltRollInterval);
@@ -1059,16 +1069,16 @@ function closeLowerThird() {
       el.style.transformOrigin = '';
     });
     const l5 = lt.querySelector('.l-5');
-    if (l5) l5.style.left = '0px';
+    if (l5) { l5.style.left = '0px'; l5.style.width = ''; }
     const l5a = lt.querySelector('.l-5a');
-    if (l5a) l5a.style.width = '70px';
+    if (l5a) l5a.style.width = '48px';
     whiteBlock.style.transition = '';
     whiteBlock.style.width = '';
     whiteBlock.style.opacity = '';
     whiteBlock.style.left = '';
     const textRoller = document.getElementById('textRoller');
     textRoller.style.transition = 'none';
-    textRoller.style.transform = 'translateY(-90px)';
+    textRoller.style.transform = `translateY(${-3 * WHITE_H}px)`;
     setTimeout(() => { textRoller.style.transition = ''; }, 50);
     ltActive = false;
   }, 600);
