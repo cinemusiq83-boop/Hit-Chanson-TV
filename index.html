@@ -23,14 +23,16 @@
 html, body { margin: 0; height: 100%; background: #000; overflow: hidden; font-family: 'Oswald', Arial, sans-serif; }
 
 /* ── PLAYER — remplit le tvFrame en 16/9 ── */
-#player {
+#player, #player2 {
   position: absolute;
   top: 50%; left: 50%;
   transform: translate(-50%, -50%);
   width: min(100vw, calc(100vh * 16 / 9));
   height: min(100vh, calc(100vw * 9 / 16));
   background: #000; object-fit: contain;
+  opacity: 0; pointer-events: none;
 }
+#player.pv-active, #player2.pv-active { opacity: 1; pointer-events: auto; }
 
 /* ── TVFRAME — zone 16/9 centrée pour les overlays ── */
 #tvFrame {
@@ -355,7 +357,8 @@ button {
   <button id="splashBtn">&#9654; REGARDER</button>
 </div>
 
-<video id="player" playsinline controls></video>
+<video id="player" class="pv-active" playsinline controls></video>
+<video id="player2" playsinline controls preload="auto"></video>
 
 <div id="tvFrame">
 <div id="controls">
@@ -906,7 +909,8 @@ const playlistSource = [
 ];
 
 let playlist = [...playlistSource];
-const player = document.getElementById('player');
+let player = document.getElementById('player');
+let nextPlayer = document.getElementById('player2');
 let currentIndex = 0;
 
 function shuffle(array) {
@@ -922,16 +926,70 @@ function initPlaylist() {
   loadVideo(currentIndex);
 }
 
+function showItem(item) {
+  player.style.objectFit = item.dezoom ? 'contain' : 'cover';
+  resetLowerThird();
+  triggerClockIntro();
+}
+
+/* Charge en cache, dans l'élément caché, une vidéo donnée (par son url) */
+let preloadedUrl = '';
+let hoverRestoreTimer = null;
+function preloadUrl(url) {
+  if (!url || url.includes('.m3u8')) { preloadedUrl = ''; return; }  // HLS : pas de préchargement
+  if (preloadedUrl === url) return;                                    // déjà en cours / prêt
+  nextPlayer.muted = true;       // jamais de son pendant le préchargement
+  nextPlayer.src = url;
+  nextPlayer.preload = 'auto';
+  nextPlayer.load();
+  preloadedUrl = url;
+}
+
+/* Précharge toujours la vidéo qui suit celle en cours, quel que soit le clip lancé */
+function preloadNext() {
+  if (playlist.length < 2) return;
+  if (currentIndex + 1 >= playlist.length) {
+    // Fin de liste : on remélange maintenant (le clip en cours reste en tête) pour pouvoir précharger la suite
+    const cur = playlist[currentIndex];
+    const rest = playlist.filter((_, k) => k !== currentIndex);
+    shuffle(rest);
+    playlist.splice(0, playlist.length, cur, ...rest);
+    currentIndex = 0;
+  }
+  const next = playlist[currentIndex + 1];
+  if (next) preloadUrl(next.url);
+}
+
 function loadVideo(index) {
   if (index >= playlist.length) { shuffle(playlist); index = 0; }
   if (index < 0) index = playlist.length - 1;
   currentIndex = index;
-  
   const item = playlist[currentIndex];
-  player.style.objectFit = item.dezoom ? 'contain' : 'cover';
-  resetLowerThird();
-  triggerClockIntro();
+  clearTimeout(hoverRestoreTimer);
 
+  // Cas rapide : ce clip est déjà (en train d'être) chargé dans l'élément caché → bascule sans coupure
+  if (preloadedUrl === item.url && nextPlayer.readyState >= 1) {
+    const old = player;
+    nextPlayer.muted = false;
+    nextPlayer.currentTime = 0;
+    if (!old.ended) old.pause();     // clic manuel : on coupe l'ancien tout de suite
+    nextPlayer.play().then(() => {
+      nextPlayer.style.objectFit = item.dezoom ? 'contain' : 'cover';
+      nextPlayer.classList.add('pv-active');
+      old.classList.remove('pv-active');
+      old.removeAttribute('src');
+      old.load();                       // libère la mémoire
+      [player, nextPlayer] = [nextPlayer, old];
+      preloadedUrl = '';
+      resetLowerThird();
+      triggerClockIntro();
+      preloadNext();
+    }).catch(() => { preloadedUrl = ''; loadVideo(index); });
+    return;
+  }
+
+  // Cas normal (premier lancement, HLS, clip pas préchargé)
+  showItem(item);
   if (window.Hls && Hls.isSupported() && item.url.includes('.m3u8')) {
     if (window.hls) window.hls.destroy();
     window.hls = new Hls();
@@ -939,15 +997,31 @@ function loadVideo(index) {
     window.hls.attachMedia(player);
   } else {
     player.src = item.url;
+    player.preload = 'auto';
     player.load();
   }
   player.play().catch(()=>{});
+  preloadedUrl = '';
+  // On précharge la suite dès que ce clip démarre (pour ne pas ralentir son propre chargement)
+  player.addEventListener('playing', preloadNext, { once: true });
 }
 
-player.addEventListener('ended', () => {
+/* Appelé quand on survole / touche un résultat de recherche : on commence à charger ce clip */
+function prefetchForSearch(item) {
+  if (item.url === playlist[currentIndex]?.url) return;
+  preloadUrl(item.url);
+  clearTimeout(hoverRestoreTimer);
+  // si l'utilisateur ne clique pas, on remet la préparation du clip suivant normal
+  hoverRestoreTimer = setTimeout(() => { preloadedUrl = ''; preloadNext(); }, 5000);
+}
+
+function onEnded(e) {
+  if (e.target !== player) return;
   currentIndex++;
   loadVideo(currentIndex);
-});
+}
+document.getElementById('player').addEventListener('ended', onEnded);
+document.getElementById('player2').addEventListener('ended', onEnded);
 
 /* ── GESTION DU LOWER THIRD ── */
 let ltTimer = null;
@@ -1094,7 +1168,8 @@ function closeLowerThird() {
   }, 600);
 }
 
-player.addEventListener('timeupdate', () => {
+function onTimeUpdate(e) {
+  if (e.target !== player) return;
   const current = player.currentTime;
   const total = player.duration;
   if (!total) return;
@@ -1105,7 +1180,9 @@ player.addEventListener('timeupdate', () => {
   if (total - current <= BEFORE_END && total - current > BEFORE_END - 1 && !ltActive) {
     triggerLowerThird();
   }
-});
+}
+document.getElementById('player').addEventListener('timeupdate', onTimeUpdate);
+document.getElementById('player2').addEventListener('timeupdate', onTimeUpdate);
 
 /* ── SPLASH ── */
 document.getElementById('splashBtn').addEventListener('click', () => {
@@ -1151,6 +1228,8 @@ document.getElementById('splashBtn').addEventListener('click', () => {
   function createResultItem(item) {
     const div = document.createElement('div');
     div.innerHTML = `${item.titre} <br><span>${item.artiste}</span>`;
+    ['mouseenter','touchstart','pointerdown'].forEach(ev =>
+      div.addEventListener(ev, () => prefetchForSearch(item), { passive: true }));
     div.addEventListener('click', () => {
       const foundIndex = playlist.findIndex(p => p.url === item.url);
       if (foundIndex !== -1) {
@@ -1218,9 +1297,11 @@ function resizeTvFrame() {
   const frame = document.getElementById('tvFrame');
   frame.style.width  = fw + 'px';
   frame.style.height = fh + 'px';
-  const player = document.getElementById('player');
-  player.style.width  = fw + 'px';
-  player.style.height = fh + 'px';
+  ['player','player2'].forEach(id => {
+    const el = document.getElementById(id);
+    el.style.width  = fw + 'px';
+    el.style.height = fh + 'px';
+  });
 }
 resizeTvFrame();
 window.addEventListener('resize', resizeTvFrame);
