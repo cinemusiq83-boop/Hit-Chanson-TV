@@ -23,7 +23,8 @@
 html, body { margin: 0; height: 100%; background: #000; overflow: hidden; font-family: 'Oswald', Arial, sans-serif; }
 
 /* ── PLAYER — remplit le tvFrame en 16/9 ── */
-#player, #player2 {
+/* .pv = toutes les vidéos (active + clips préchargés cachés) */
+.pv {
   position: absolute;
   top: 50%; left: 50%;
   transform: translate(-50%, -50%);
@@ -32,7 +33,7 @@ html, body { margin: 0; height: 100%; background: #000; overflow: hidden; font-f
   background: #000; object-fit: contain;
   opacity: 0; pointer-events: none;
 }
-#player.pv-active, #player2.pv-active { opacity: 1; pointer-events: auto; }
+.pv.pv-active { opacity: 1; pointer-events: auto; }
 
 /* ── TVFRAME — zone 16/9 centrée pour les overlays ── */
 #tvFrame {
@@ -357,8 +358,6 @@ button {
   <button id="splashBtn">&#9654; REGARDER</button>
 </div>
 
-<video id="player" class="pv-active" playsinline controls></video>
-<video id="player2" playsinline controls preload="auto"></video>
 
 <div id="tvFrame">
 <div id="controls">
@@ -909,8 +908,7 @@ const playlistSource = [
 ];
 
 let playlist = [...playlistSource];
-let player = document.getElementById('player');
-let nextPlayer = document.getElementById('player2');
+let player = null;   // vidéo en cours (créée à la demande, voir plus bas)
 let currentIndex = 0;
 
 function shuffle(array) {
@@ -926,38 +924,128 @@ function initPlaylist() {
   loadVideo(currentIndex);
 }
 
-function showItem(item) {
-  player.style.objectFit = item.dezoom ? 'contain' : 'cover';
-  resetLowerThird();
-  triggerClockIntro();
+/* ══════════════════════════════════════
+   PRÉCHARGEMENT DE TOUS LES CLIPS
+   Chaque clip a sa propre <video> cachée, déjà chargée : au clic il démarre aussitôt.
+══════════════════════════════════════ */
+const PRELOAD_MAX      = 300;  // nb max de clips gardés prêts (mets 9999 pour « tous », au prix de la mémoire)
+const PRELOAD_FULL     = 30;   // les N premiers sont chargés en entier (début de vidéo), les autres en « metadata »
+const PRELOAD_PARALLEL = 2;    // téléchargements simultanés en tâche de fond
+const pool = new Map();        // url -> <video>   (le plus récemment utilisé en dernier)
+let warmQueue = [], warmRunning = 0, warmStarted = false;
+
+function makePv() {
+  const v = document.createElement('video');
+  v.className = 'pv';
+  v.playsInline = true; v.controls = true; v.muted = true;
+  v.addEventListener('ended', onEnded);
+  v.addEventListener('timeupdate', onTimeUpdate);
+  // Sécurité : un clip doit TOUJOURS démarrer à 0 s
+  const forceZero = () => {
+    if (v === player && v._fix && v.currentTime > 0.25) {
+      v._fix = false;
+      console.warn('Clip démarré à', v.currentTime.toFixed(1), 's → retour à 0 :', v._url);
+      try { v.currentTime = 0; } catch (e) {}
+    }
+  };
+  v.addEventListener('loadedmetadata', forceZero);
+  v.addEventListener('playing', () => { forceZero(); v._fix = false; });
+  document.body.insertBefore(v, document.getElementById('tvFrame'));
+  return v;
 }
 
-/* Charge en cache, dans l'élément caché, une vidéo donnée (par son url) */
-let preloadedUrl = '';
-let hoverRestoreTimer = null;
-function preloadUrl(url) {
-  if (!url || url.includes('.m3u8')) { preloadedUrl = ''; return; }  // HLS : pas de préchargement
-  if (preloadedUrl === url) return;                                    // déjà en cours / prêt
-  nextPlayer.muted = true;       // jamais de son pendant le préchargement
-  nextPlayer.src = url;
-  nextPlayer.preload = 'auto';
-  nextPlayer.load();
-  preloadedUrl = url;
+function attachSrc(v, url) {
+  if (window.Hls && Hls.isSupported() && url.includes('.m3u8')) {
+    v._hls = new Hls(); v._hls.loadSource(url); v._hls.attachMedia(v);
+  } else {
+    v.src = url;
+  }
 }
 
-/* Précharge toujours la vidéo qui suit celle en cours, quel que soit le clip lancé */
-function preloadNext() {
+function dropEl(url) {
+  const v = pool.get(url);
+  if (!v) return;
+  pool.delete(url);
+  if (v._hls) v._hls.destroy();
+  v.pause(); v.removeAttribute('src'); v.load(); v.remove();
+}
+
+/* Renvoie la <video> d'un clip (la crée et la charge si besoin) */
+function getEl(url, preload) {
+  let v = pool.get(url);
+  if (!v) {
+    v = makePv(); v._url = url;
+    v.preload = preload || 'auto';
+    attachSrc(v, url);
+  } else if (preload === 'auto' && v.preload !== 'auto') {
+    v.preload = 'auto';
+  }
+  pool.delete(url); pool.set(url, v);       // marque comme récemment utilisé
+  for (const u of pool.keys()) {            // fait de la place si trop de clips
+    if (pool.size <= PRELOAD_MAX) break;
+    if (pool.get(u) !== player && u !== url) dropEl(u);
+  }
+  return v;
+}
+
+/* Charge en entier le début d'un clip précis */
+function boost(url) {
+  if (url) getEl(url, 'auto');
+}
+
+/* Les 2 clips suivants sont toujours chargés à fond */
+function boostNext() {
   if (playlist.length < 2) return;
   if (currentIndex + 1 >= playlist.length) {
-    // Fin de liste : on remélange maintenant (le clip en cours reste en tête) pour pouvoir précharger la suite
     const cur = playlist[currentIndex];
     const rest = playlist.filter((_, k) => k !== currentIndex);
     shuffle(rest);
     playlist.splice(0, playlist.length, cur, ...rest);
     currentIndex = 0;
   }
-  const next = playlist[currentIndex + 1];
-  if (next) preloadUrl(next.url);
+  for (let k = 1; k <= 2; k++) { const n = playlist[currentIndex + k]; if (n) boost(n.url); }
+}
+
+/* Tâche de fond : prépare tous les autres clips, les plus proches dans la liste d'abord */
+function warmAll() {
+  warmQueue = [];
+  for (let k = 1; k < playlist.length; k++) warmQueue.push(playlist[(currentIndex + k) % playlist.length].url);
+  pump();
+}
+function pump() {
+  while (warmRunning < PRELOAD_PARALLEL && warmQueue.length) {
+    const url = warmQueue.shift();
+    if (pool.has(url)) continue;
+    if (pool.size >= PRELOAD_MAX) { warmQueue = []; return; }
+    const full = pool.size < PRELOAD_FULL;
+    const v = getEl(url, full ? 'auto' : 'metadata');
+    warmRunning++;
+    let done = false;
+    const finish = () => { if (done) return; done = true; warmRunning--; pump(); };
+    v.addEventListener(full ? 'canplaythrough' : 'loadedmetadata', finish, { once: true });
+    v.addEventListener('error', finish, { once: true });
+    setTimeout(finish, 15000);
+  }
+}
+
+function activate(v, item) {
+  const old = player;
+  if (old && old !== v) {
+    old.pause();
+    old.classList.remove('pv-active');
+    old.muted = true;
+    try { old.currentTime = 0; } catch (e) {}   // prêt à repartir du début s'il est rejoué
+  }
+  player = v;
+  v._fix = true;
+  v.preload = 'auto';
+  v.muted = false;
+  try { v.currentTime = 0; } catch (e) {}
+  v.style.objectFit = item.dezoom ? 'contain' : 'cover';
+  v.classList.add('pv-active');
+  resetLowerThird();
+  triggerClockIntro();
+  v.play().catch(() => {});
 }
 
 function loadVideo(index) {
@@ -965,54 +1053,17 @@ function loadVideo(index) {
   if (index < 0) index = playlist.length - 1;
   currentIndex = index;
   const item = playlist[currentIndex];
-  clearTimeout(hoverRestoreTimer);
-
-  // Cas rapide : ce clip est déjà (en train d'être) chargé dans l'élément caché → bascule sans coupure
-  if (preloadedUrl === item.url && nextPlayer.readyState >= 1) {
-    const old = player;
-    nextPlayer.muted = false;
-    nextPlayer.currentTime = 0;
-    if (!old.ended) old.pause();     // clic manuel : on coupe l'ancien tout de suite
-    nextPlayer.play().then(() => {
-      nextPlayer.style.objectFit = item.dezoom ? 'contain' : 'cover';
-      nextPlayer.classList.add('pv-active');
-      old.classList.remove('pv-active');
-      old.removeAttribute('src');
-      old.load();                       // libère la mémoire
-      [player, nextPlayer] = [nextPlayer, old];
-      preloadedUrl = '';
-      resetLowerThird();
-      triggerClockIntro();
-      preloadNext();
-    }).catch(() => { preloadedUrl = ''; loadVideo(index); });
-    return;
+  activate(getEl(item.url, 'auto'), item);
+  boostNext();
+  if (!warmStarted) {                     // on lance le préchargement général une fois le 1er clip démarré
+    warmStarted = true;
+    player.addEventListener('playing', () => setTimeout(warmAll, 1500), { once: true });
   }
-
-  // Cas normal (premier lancement, HLS, clip pas préchargé)
-  showItem(item);
-  if (window.Hls && Hls.isSupported() && item.url.includes('.m3u8')) {
-    if (window.hls) window.hls.destroy();
-    window.hls = new Hls();
-    window.hls.loadSource(item.url);
-    window.hls.attachMedia(player);
-  } else {
-    player.src = item.url;
-    player.preload = 'auto';
-    player.load();
-  }
-  player.play().catch(()=>{});
-  preloadedUrl = '';
-  // On précharge la suite dès que ce clip démarre (pour ne pas ralentir son propre chargement)
-  player.addEventListener('playing', preloadNext, { once: true });
 }
 
-/* Appelé quand on survole / touche un résultat de recherche : on commence à charger ce clip */
+/* Appelé quand on survole / touche un résultat de recherche */
 function prefetchForSearch(item) {
-  if (item.url === playlist[currentIndex]?.url) return;
-  preloadUrl(item.url);
-  clearTimeout(hoverRestoreTimer);
-  // si l'utilisateur ne clique pas, on remet la préparation du clip suivant normal
-  hoverRestoreTimer = setTimeout(() => { preloadedUrl = ''; preloadNext(); }, 5000);
+  if (item.url !== playlist[currentIndex]?.url) boost(item.url);
 }
 
 function onEnded(e) {
@@ -1020,8 +1071,6 @@ function onEnded(e) {
   currentIndex++;
   loadVideo(currentIndex);
 }
-document.getElementById('player').addEventListener('ended', onEnded);
-document.getElementById('player2').addEventListener('ended', onEnded);
 
 /* ── GESTION DU LOWER THIRD ── */
 let ltTimer = null;
@@ -1181,8 +1230,6 @@ function onTimeUpdate(e) {
     triggerLowerThird();
   }
 }
-document.getElementById('player').addEventListener('timeupdate', onTimeUpdate);
-document.getElementById('player2').addEventListener('timeupdate', onTimeUpdate);
 
 /* ── SPLASH ── */
 document.getElementById('splashBtn').addEventListener('click', () => {
@@ -1297,8 +1344,7 @@ function resizeTvFrame() {
   const frame = document.getElementById('tvFrame');
   frame.style.width  = fw + 'px';
   frame.style.height = fh + 'px';
-  ['player','player2'].forEach(id => {
-    const el = document.getElementById(id);
+  document.querySelectorAll('.pv').forEach(el => {
     el.style.width  = fw + 'px';
     el.style.height = fh + 'px';
   });
