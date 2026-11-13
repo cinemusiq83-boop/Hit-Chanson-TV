@@ -18,7 +18,7 @@
 <style>
 /* ── ÉCHELLE GLOBALE DE L'INTERFACE (logo, lower third, horloge) ──
    1.25 = équivalent du zoom navigateur à 125 %. Change cette valeur pour ajuster. */
-:root { --ui-scale: 1.25; --lt-scale: 1.25; --red-h: 44px; --white-h: 22px; }
+:root { }
 * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
 html, body { margin: 0; height: 100%; background: #000; overflow: hidden; font-family: 'Oswald', Arial, sans-serif; }
 
@@ -37,6 +37,7 @@ html, body { margin: 0; height: 100%; background: #000; overflow: hidden; font-f
 
 /* ── TVFRAME — zone 16/9 centrée pour les overlays ── */
 #tvFrame {
+  --u: calc(min(100vw, 100vh * 16 / 9) / 2080);   /* 1 px de la photo 2080×1170 */
   position: absolute;
   top: 50%; left: 50%;
   transform: translate(-50%, -50%);
@@ -91,13 +92,17 @@ button {
 #searchResults div:active { background: rgba(255,45,45,0.35); }
 #searchResults div span { color: rgba(255,255,255,0.5); font-size: 12px; }
 
-/* HORLOGE */
+/* ══════════════════════════════════════════════════════════════
+   MISE EN PAGE 16/9 — calée sur la photo de référence (2080 × 1170)
+   --u = 1 pixel de la photo, mis à l'échelle de l'écran (défini par JS aussi)
+══════════════════════════════════════════════════════════════ */
+
+/* HORLOGE : barre des secondes + 16 (grand) + 30 (petit, en exposant) */
 #parisTime {
   position: absolute;
-  left: 7%;
-  top: 9%;
-  transform: scale(var(--ui-scale));
-  transform-origin: left top;
+  left: calc(167 * var(--u));
+  top: calc(87 * var(--u));
+  width: calc(129 * var(--u));
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -107,13 +112,11 @@ button {
   transition: opacity 0.4s ease;
 }
 
-/* ── INTRO HORLOGE (lignes façon lower third qui arrivent de la gauche) ── */
+/* ── INTRO HORLOGE (lignes qui arrivent de la gauche) ── */
 #clockIntro {
   position: absolute;
-  left: 7%;
-  top: 9%;
-  transform: scale(var(--ui-scale));
-  transform-origin: left top;
+  left: calc(167 * var(--u));
+  top: calc(87 * var(--u));
   z-index: 21;
   pointer-events: none;
   display: none;
@@ -122,66 +125,58 @@ button {
   position: absolute;
   left: 0;
   width: 100%;
-  height: 3px;
+  height: calc(3 * var(--u));
   border-radius: 2px;
   transform: scaleX(0);
   transform-origin: left;
 }
 .ci-white { background-color: #ffffff; }
-.ci-red   { background-color: #c0191a; height: 4px; }
+.ci-red   { background-color: #c0191a; height: calc(4 * var(--u)); }
 
 #clockSecBar {
   width: 100%;
-  height: 3px;
-  background: rgba(255,255,255,0.25);
-  border-radius: 2px;
-  margin-bottom: 4px;
+  height: calc(7 * var(--u));
+  background: rgba(255,255,255,0.3);
+  margin-bottom: calc(11.8 * var(--u));
   overflow: hidden;
 }
-
 #clockSecFill {
   height: 100%;
   background: #fff;
-  border-radius: 2px;
   transition: width 1s linear;
 }
 
 #clockDigits {
   display: flex;
-  align-items: flex-end;
-  gap: 0;
+  align-items: flex-start;
   line-height: 1;
 }
-
 #clockHour {
   font-family: 'Bebas Neue', Impact, sans-serif;
-  font-size: clamp(52px, 4vw, 80px);
+  font-size: calc(97 * var(--u));
   color: #fff;
   text-shadow: 0 2px 10px rgba(0,0,0,0.9);
-  letter-spacing: 2px;
-  line-height: 0.9;
+  letter-spacing: calc(-2 * var(--u));
+  line-height: 1;
 }
-
 #clockMin {
   font-family: 'Bebas Neue', Impact, sans-serif;
-  font-size: clamp(28px, 2.1vw, 44px);
+  font-size: calc(61 * var(--u));
   color: #fff;
   text-shadow: 0 2px 10px rgba(0,0,0,0.9);
-  letter-spacing: 2px;
+  letter-spacing: 0;
   line-height: 1;
-  margin-bottom: 23px;
-  margin-left: 2px;
+  margin-top: calc(2 * var(--u));
+  margin-left: calc(8 * var(--u));
 }
 
-/* LOGO */
+/* LOGO (même place, même taille que sur la photo) */
 #logo {
   position: absolute;
-  left: 5.2%;
-  top: 71%;
-  width: calc(13% + 10px);
-  height: calc(15% + 10px);
-  transform: scale(var(--ui-scale));
-  transform-origin: left top;
+  left: calc(168 * var(--u));
+  top: calc(852 * var(--u));
+  width: calc(202 * var(--u));
+  height: calc(206 * var(--u));
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
@@ -191,110 +186,99 @@ button {
 }
 
 /* ══════════════════════════════════════
-   LOWER THIRD DESIGN
+   LOWER THIRD — design de la photo
 ══════════════════════════════════════ */
 #lowerThird {
+  --red-h: calc(80 * var(--u));
+  --white-h: calc(50 * var(--u));
   position: absolute;
-  top: 76%;
-  /* à droite du logo agrandi : 5.2% + (13% + 10px) × échelle + marge */
-  left: calc(5.2% + (13% + 10px) * var(--ui-scale) + 14px);
-  /* largeur "avant échelle" pour que le bord droit reste à ~98% de l'écran */
-  width: calc((100% - (5.2% + (13% + 10px) * var(--ui-scale) + 14px) - 2%) / var(--lt-scale));
-  height: calc(var(--red-h) + var(--white-h));
-  transform: scale(var(--lt-scale));
-  transform-origin: left top;
-  z-index: 30;
+  left: calc(446 * var(--u));
+  top: calc(880 * var(--u));
+  width: calc(1569 * var(--u));
+  height: calc(135 * var(--u));
+  z-index: 15;
   pointer-events: none;
   display: none;
 }
 
-/* Structure des lignes horizontales */
 .line {
   position: absolute;
-  height: 2.5px;
+  height: calc(3 * var(--u));
   transform-origin: left;
   transform: scaleX(0);
   z-index: 1;
 }
 
-/* Configuration des 6 lignes */
-.l-1 { top: 12px;  left: 8px;   width: 100%; background-color: #ffffff; }
+/* 6 lignes (positions et longueurs mesurées sur la photo) */
+.l-1 { top: calc(30.5 * var(--u)); left: 0; width: calc(1569 * var(--u)); background-color: #ffffff; }
 .l-1.lt-enter { animation: lineDraw 0.6s ease forwards 0.1s, scanMove 1.8s ease-in-out 0.7s infinite alternate; }
 
-.l-2 { top: 21px; left: 8px;   width: 81%;  background-color: #ffffff; }
+.l-2 { top: calc(47.5 * var(--u)); left: calc(8 * var(--u)); width: calc(1273 * var(--u)); background-color: #ffffff; }
 .l-2.lt-enter { animation: lineDraw 0.6s ease forwards 0.2s, scanMoveInverse 1.5s ease-in-out 0.8s infinite alternate; }
 
-.l-3 { top: 30px; left: 8px;   width: 86%;  height: 3px; background-color: #c0191a; }
+.l-3 { top: calc(64 * var(--u)); left: 0; width: calc(1361 * var(--u)); height: calc(4 * var(--u)); background-color: #c0191a; }
 .l-3.lt-enter { animation: lineDraw 0.6s ease forwards 0.3s, scanMove 1.2s ease-in-out 0.9s infinite alternate; }
 
-.l-4 { top: 39px; left: 8px; width: 79%; background-color: #ffffff; }
+.l-4 { top: calc(81.5 * var(--u)); left: calc(16 * var(--u)); width: calc(1206 * var(--u)); background-color: #ffffff; }
 .l-4.lt-enter { animation: lineDraw 0.6s ease forwards 0.4s, scanMoveInverse 2s ease-in-out 1s infinite alternate; }
 
-.l-5a { top: 49px; left: -48px; width: 48px; background-color: #ffffff; transform-origin: right; }
+/* ligne 5 + sa queue vers le logo (a) */
+.l-5a { top: calc(99.5 * var(--u)); left: calc(-124 * var(--u)); width: calc(124 * var(--u)); background-color: #ffffff; transform-origin: right; }
 .l-5a.lt-enter { animation: lineDraw 0.6s ease forwards 0.5s; }
 
-.l-5 { top: 49px; left: 0px; width: 76%; background-color: #ffffff; }
+.l-5 { top: calc(99.5 * var(--u)); left: 0; width: calc(1197 * var(--u)); background-color: #ffffff; }
 .l-5.lt-enter { animation: lineDraw 0.6s ease forwards 0.5s; }
 .l-5.lt-moving { animation: lineDraw 0.6s ease forwards 0.5s, scanMove 1.6s ease-in-out 0s infinite alternate; }
 
-.l-6 { top: 59px; left: 8px;   width: 91%;  background-color: #ffffff; }
+.l-6 { top: calc(116.5 * var(--u)); left: calc(16 * var(--u)); width: calc(1406 * var(--u)); background-color: #ffffff; }
 .l-6.lt-enter { animation: lineDraw 0.6s ease forwards 0.6s, scanMoveInverse 2.2s ease-in-out 1.2s infinite alternate; }
 
-/* --- BLOC SUPÉRIEUR (ARTISTE ROUGE) --- */
+/* --- BLOC ROUGE (ARTISTE) --- */
 .center-band {
   position: absolute;
-  top: 0px; left: 0px;
+  top: 0; left: 0;
   width: auto; height: var(--red-h);
   display: flex;
   align-items: center;
   z-index: 2;
 }
-
 .red-block {
   background-color: #c0191a;
   height: 100%;
-  padding: 0 11px 0 9px;
+  padding: 0 calc(20 * var(--u)) 0 calc(17 * var(--u));
   display: flex;
   align-items: center;
   transform: scaleX(0);
   transform-origin: left;
 }
-.red-block.lt-enter {
-  animation: lineDraw 0.5s cubic-bezier(0.1, 0.8, 0.2, 1) 0.4s forwards;
-}
-.red-block.lt-exit {
-  animation: lineClose 0.4s cubic-bezier(0.77, 0, 0.175, 1) forwards;
-}
+.red-block.lt-enter { animation: lineDraw 0.5s cubic-bezier(0.1, 0.8, 0.2, 1) 0.4s forwards; }
+.red-block.lt-exit  { animation: lineClose 0.4s cubic-bezier(0.77, 0, 0.175, 1) forwards; }
 
 .artist-text {
   color: #ffffff;
   font-family: 'Bebas Neue', Impact, sans-serif;
-  font-size: 40px;
+  font-size: calc(64 * var(--u));
   font-weight: 400;
-  letter-spacing: 0.5px;
+  letter-spacing: calc(1.5 * var(--u));
   line-height: 1;
-  padding-top: 2px;
-  -webkit-text-stroke: 0.5px #ffffff;
+  padding-top: calc(3 * var(--u));
+  -webkit-text-stroke: calc(0.8 * var(--u)) #ffffff;
   white-space: nowrap;
 }
 
-/* --- BLOC INFÉRIEUR BLANC CHRONOMÉTRÉ --- */
+/* --- BLOC BLANC (TITRE) --- */
 .sub-text-area {
   position: absolute;
-  top: var(--red-h); left: 0px;
+  top: var(--red-h); left: 0;
   height: var(--white-h);
   background-color: #ffffff;
   overflow: hidden;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
   z-index: 2;
-  width: 0px; 
+  width: 0px;
   opacity: 0;
   transition: width 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s ease;
 }
-.sub-text-area.lt-enter {
-  animation: fadeInBlock 0.3s ease 0.6s forwards;
-}
-/* Fermeture : se retire vers la gauche */
+.sub-text-area.lt-enter { animation: fadeInBlock 0.3s ease 0.6s forwards; }
 .sub-text-area.lt-exit {
   animation: lineClose 0.4s cubic-bezier(0.77, 0, 0.175, 1) forwards !important;
   transition: opacity 0.2s ease !important;
@@ -309,31 +293,29 @@ button {
   transition: transform 0.5s cubic-bezier(0.77, 0, 0.175, 1);
   transform: translateY(0px);
 }
-
 .text-item {
   height: var(--white-h);
   display: inline-flex;
   align-items: center;
-  padding: 1px 1px 0 1px;
+  padding: calc(2 * var(--u)) calc(9 * var(--u)) 0 calc(9 * var(--u));
   color: #1c1c1c;
   font-family: 'Bebas Neue', Impact, sans-serif;
-  font-size: 22px;
+  font-size: calc(36 * var(--u));
   line-height: 1;
-  letter-spacing: 1px;
-  -webkit-text-stroke: 0.4px #1c1c1c;
+  letter-spacing: calc(1.2 * var(--u));
+  -webkit-text-stroke: calc(0.5 * var(--u)) #1c1c1c;
   white-space: nowrap;
   width: max-content;
   overflow: hidden;
 }
 .text-item .ti { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-/* Animations Keyframes */
+/* Animations */
 @keyframes lineDraw  { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 @keyframes lineClose { from { transform: scaleX(1); } to { transform: scaleX(0); } }
 @keyframes fadeInBlock { to { opacity: 1; } }
-
-@keyframes scanMove        { 0% { transform: scaleX(1) translateX(0);     } 100% { transform: scaleX(1) translateX(15px);  } }
-@keyframes scanMoveInverse { 0% { transform: scaleX(1) translateX(12px);  } 100% { transform: scaleX(1) translateX(-8px);  } }
+@keyframes scanMove        { 0% { transform: scaleX(1) translateX(0); } 100% { transform: scaleX(1) translateX(calc(15 * var(--u))); } }
+@keyframes scanMoveInverse { 0% { transform: scaleX(1) translateX(calc(12 * var(--u))); } 100% { transform: scaleX(1) translateX(calc(-8 * var(--u))); } }
 
 /* ── SPLASH ── */
 #splash {
@@ -1078,7 +1060,7 @@ let ltTimer = null;
 let ltRollInterval = null;
 let ltActive = false;
 let widthsArray = [0, 0, 0, 0];
-const WHITE_H = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--white-h')) || 36;
+let WHITE_H = 50;
 
 function resetLowerThird() {
   clearTimeout(ltTimer);
@@ -1111,6 +1093,7 @@ function triggerLowerThird() {
 
   const lt = document.getElementById('lowerThird');
   lt.style.display = 'block';
+  WHITE_H = document.getElementById('whiteBlock').offsetHeight || WHITE_H;
 
   const enterElements = lt.querySelectorAll('.line, .red-block, .sub-text-area');
   enterElements.forEach(el => el.classList.add('lt-enter'));
@@ -1153,11 +1136,11 @@ function triggerLowerThird() {
 
   // Aligner la ligne 5 avec le bord gauche du bloc blanc
   const l5 = lt.querySelector('.l-5');
-  if (l5) { l5.style.left = `${offset3Letters}px`; l5.style.width = `calc(76% - ${offset3Letters}px)`; }
+  if (l5) { l5.style.left = `${offset3Letters}px`; l5.style.width = `calc(1197 * var(--u) - ${offset3Letters}px)`; }
 
   // Aligner la ligne 5a pour qu'elle arrive exactement au début de la ligne 5
   const l5a = lt.querySelector('.l-5a');
-  if (l5a) l5a.style.width = `${offset3Letters + 48}px`;
+  if (l5a) l5a.style.width = `calc(124 * var(--u) + ${offset3Letters}px)`;
 
   // Déclencher le mouvement de la ligne 5 quand le bloc blanc est visible (après fadeInBlock : 0.6s délai + 0.3s durée = 0.9s)
   setTimeout(() => {
@@ -1205,7 +1188,7 @@ function closeLowerThird() {
     const l5 = lt.querySelector('.l-5');
     if (l5) { l5.style.left = '0px'; l5.style.width = ''; }
     const l5a = lt.querySelector('.l-5a');
-    if (l5a) l5a.style.width = '48px';
+    if (l5a) l5a.style.width = '';
     whiteBlock.style.transition = '';
     whiteBlock.style.width = '';
     whiteBlock.style.opacity = '';
@@ -1345,6 +1328,7 @@ function resizeTvFrame() {
   const frame = document.getElementById('tvFrame');
   frame.style.width  = fw + 'px';
   frame.style.height = fh + 'px';
+  frame.style.setProperty('--u', (fw / 2080) + 'px');
   document.querySelectorAll('.pv').forEach(el => {
     el.style.width  = fw + 'px';
     el.style.height = fh + 'px';
