@@ -361,7 +361,7 @@ button {
   top: var(--red-h);
   left: 0;
   height: var(--white-h);
-  background: #fff;
+  background: transparent;
   overflow: hidden;
   z-index: 2;
   width: 0;
@@ -374,8 +374,7 @@ button {
 
 .sub-text-area.lt-ready {
   opacity: 1;
-  transition: width .4s cubic-bezier(.25, 1, .5, 1),
-              opacity .3s ease;
+  transition: opacity .3s ease;
 }
 
 .sub-text-area.lt-exit {
@@ -409,7 +408,7 @@ button {
   width: auto;
   display: flex;
   flex-direction: column;
-  transition: transform .5s cubic-bezier(.77, 0, .175, 1);
+  transition: transform .45s cubic-bezier(0.25, 0.8, 0.25, 1);
   transform: translateY(0);
 }
 
@@ -418,6 +417,7 @@ button {
   display: inline-flex;
   align-items: center;
   padding: calc(2 * var(--u)) calc(9 * var(--u)) 0;
+  background: #fff;
   color: #1c1c1c;
   font-family: 'Bebas Neue', Impact, sans-serif;
   font-size: calc(36 * var(--u));
@@ -1284,6 +1284,7 @@ let ltTimer = null;
 let ltRollInterval = null;
 let ltActive = false;
 let widthsArray = [0, 0, 0, 0];
+let ltStep = 0;
 let WHITE_H = 50;
 
 function resetLowerThird() {
@@ -1448,17 +1449,22 @@ function triggerLowerThird() {
   /* Défilement des informations */
 
   let step = 0;
+  ltStep = 0;
 
   ltRollInterval = setInterval(() => {
 
     step++;
+    ltStep = step;
 
     if (step <= 3) {
 
+      /* La fenêtre de découpe est élargie au plus large des textes ;
+         chaque rectangle blanc garde sa largeur exacte. Les deux
+         descendent ensemble : l'ancien sort en bas, le nouveau entre par le haut. */
+      whiteBlock.style.width = `${Math.max(...widthsArray)}px`;
+
       textRoller.style.transform =
         `translateY(${-3 * WHITE_H + step * WHITE_H}px)`;
-
-      whiteBlock.style.width = `${widthsArray[step]}px`;
     }
 
     if (step === 3) {
@@ -1483,6 +1489,9 @@ function closeLowerThird() {
 
   const lt = document.getElementById('lowerThird');
   const whiteBlock = document.getElementById('whiteBlock');
+
+  // La fenêtre reprend la largeur du texte affiché pour que la sortie reste identique
+  whiteBlock.style.width = `${widthsArray[ltStep] || widthsArray[0]}px`;
 
   // On enlève l'état d'entrée et on joue la séquence inverse
   lt.querySelectorAll('.line, .red-block, .red-wipe, .sub-text-area, .white-wipe').forEach(el => {
