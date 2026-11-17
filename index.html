@@ -1444,6 +1444,16 @@ function triggerLowerThird() {
       `calc(124 * var(--u) + ${offset3Letters}px)`;
   }
 
+  /* Ligne 6 : ne dépasse pas le rectangle blanc par la gauche.
+     Bord gauche = bord gauche du rectangle blanc + 8u (marge pour l'oscillation
+     scanMoveInverse qui recule de 8u). Le bord droit reste à 1422u comme avant. */
+  const l6 = lt.querySelector('.l-6');
+
+  if (l6) {
+    l6.style.left = `calc(${offset3Letters}px + 8 * var(--u))`;
+    l6.style.width = `calc(1414 * var(--u) - ${offset3Letters}px)`;
+  }
+
   setTimeout(() => {
     if (l5) l5.classList.add('lt-moving');
   }, 900);
@@ -1510,6 +1520,8 @@ function closeLowerThird() {
     if (l5) { l5.style.left = ''; l5.style.width = ''; }
     const l5a = lt.querySelector('.l-5a');
     if (l5a) l5a.style.width = '';
+    const l6 = lt.querySelector('.l-6');
+    if (l6) { l6.style.left = ''; l6.style.width = ''; }
   }, 1100);
 }
 
